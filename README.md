@@ -1,4 +1,4 @@
-# lsst-ion-pump-ps-controller
+# LsstPsProdTop
 
 # Before you clone the GIT repository
 
@@ -15,4 +15,4 @@
 > $ git lfs install
 
 # Clone the GIT repository
-> $ git clone --recursive git@github.com:slaclab/lsst-ion-pump-ps-controller
+> $ git clone --recursive git@github.com:slaclab/LsstPsProdTop
