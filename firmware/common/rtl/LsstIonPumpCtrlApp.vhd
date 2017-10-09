@@ -2,13 +2,13 @@
 --                                                             --
 -----------------------------------------------------------------
 --
---      LsstIonPumpCtrlApp.vhd -
+--      LsstPsProdTopApp.vhd -
 --
 --      Copyright(c) SLAC National Accelerator Laboratory 2000
 --
---      Author: Jeff Olsen
+--      Author: Leonid Sapozhnikov
 --      Created on: 4/20/2017 2:04:46 PM
---      Last change: JO 8/2/2017 9:52:21 AM
+--      Last change: LS 10/09/2017 9:52:21 AM
 --
 -------------------------------------------------------------------------------
 -- File       : lsst-ion-pump-ps-contoller.vhd
@@ -37,7 +37,7 @@ use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.AxiLitePkg.all;
 
-entity LsstIonPumpCtrlApp is
+entity LsstPsProdTopApp is
   generic (
     TPD_G            : time            := 1ns;
     AXI_CLK_FREQ_C   : real            := 156.0E+6;
@@ -76,9 +76,9 @@ entity LsstIonPumpCtrlApp is
 -- Ion Pump Enable
     Enable : out slv(5 downto 0)        -- Enable HVPS
     );
-end entity LsstIonPumpCtrlApp;
+end entity LsstPsProdTopApp;
 
-architecture Behavioral of LsstIonPumpCtrlApp is
+architecture Behavioral of LsstPsProdTopApp is
 
   signal readMaster  : AxiLiteReadMasterType;
   signal readSlave   : AxiLiteReadSlaveType;

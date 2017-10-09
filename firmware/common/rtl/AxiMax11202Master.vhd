@@ -6,7 +6,7 @@
 --
 --      Copyright(c) SLAC National Accelerator Laboratory 2000
 --
---      Author: Jeff Olsen
+--      Author: Leonid Sapozhnikov
 --      Created on: 7/18/2017 9:35:50 AM
 --      Last change: JO 8/3/2017 1:54:33 PM
 --

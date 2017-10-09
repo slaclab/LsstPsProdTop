@@ -6,9 +6,9 @@
 --
 --      Copyright(c) SLAC National Accelerator Laboratory 2000
 --
---      Author: Jeff Olsen
+--      Author: Leonid Sapozhnikov
 --      Created on: 4/20/2017 2:04:46 PM
---      Last change: JO 8/2/2017 12:23:02 PM
+--      Last change: LS 10/09/2017 12:23:02 PM
 --
 -------------------------------------------------------------------------------
 -- File       : FrontEndBoardvhd
