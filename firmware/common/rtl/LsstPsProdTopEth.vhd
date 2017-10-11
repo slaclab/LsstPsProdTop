@@ -7,11 +7,11 @@
 -- Description: Ethernet Wrapper
 -------------------------------------------------------------------------------
 -- This file is part of 'LSST Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'LSST Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'LSST Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ entity LsstPsProdTopEth is
       TPD_G     : time             := 1 ns;
       DHCP_G    : boolean          := true;  -- true = DHCP, false = static address
       RSSI_G    : boolean          := false;  -- true = RUDP, false = UDP only
-      IP_ADDR_G : slv(31 downto 0) := x"0A01A8C0");  -- 192.168.1.10 (before DHCP)     
+      IP_ADDR_G : slv(31 downto 0) := x"0A01A8C0");  -- 192.168.1.10 (before DHCP)
    port (
       -- Register Interface
       axilClk         : out sl;
@@ -77,6 +77,7 @@ architecture top_level of LsstPsProdTopEth is
    signal ethRst     : sl;
    signal extRst     : sl;
    signal rssiStatus : slv(6 downto 0);
+   signal localIp    : slv(31 downto 0);
 
 begin
 
@@ -90,20 +91,25 @@ begin
    ------------------------
    U_PHY_MAC : entity work.GigEthGtp7Wrapper
       generic map (
-         TPD_G              => TPD_G,
+
+	     TPD_G              => TPD_G,
          NUM_LANE_G         => 1,
          -- Clocking Configurations
          USE_GTREFCLK_G     => false,
-         CLKIN_PERIOD_G     => 6.4,     -- 156.25 MHz
-         DIVCLK_DIVIDE_G    => 5,       -- 31.25 MHz = (156.25 MHz/5)
-         CLKFBOUT_MULT_F_G  => 32.0,    -- 1 GHz = (32 x 31.25 MHz)
-         CLKOUT0_DIVIDE_F_G => 8.0,     -- 125 MHz = (1.0 GHz/8)   
+         CLKIN_PERIOD_G     => 8.0,  -- 125MHz
+         DIVCLK_DIVIDE_G    => 1,    -- 125 MHz = (125 MHz/1)
+         CLKFBOUT_MULT_F_G  => 8.0,  -- 1 GHz = (8 x 125 MHz)
+         CLKOUT0_DIVIDE_F_G => 8.0,  -- 125 MHz = (1.0 GHz/8)
+
+--         CLKIN_PERIOD_G     => 6.4,     -- 156.25 MHz
+--         DIVCLK_DIVIDE_G    => 5,       -- 31.25 MHz = (156.25 MHz/5)
+--         CLKFBOUT_MULT_F_G  => 32.0,    -- 1 GHz = (32 x 31.25 MHz)
          -- AXI Streaming Configurations
          AXIS_CONFIG_G      => (others => EMAC_AXIS_CONFIG_C))
       port map (
          -- Local Configurations
          localMac(0)     => ethMac,
-         -- Streaming DMA Interface 
+         -- Streaming DMA Interface
          dmaClk(0)       => ethClk,
          dmaRst(0)       => ethRst,
          dmaIbMasters(0) => obMacMaster,
@@ -126,6 +132,7 @@ begin
    ----------------------
    -- IPv4/ARP/UDP Engine
    ----------------------
+   localIp <= ethMac(47 downto 40) & IP_ADDR_G(23 downto 0);  -- to have programmable IP through eFuse, MAC and IP LSB will be same
    U_UDP : entity work.UdpEngineWrapper
       generic map (
          -- Simulation Generics
@@ -143,7 +150,7 @@ begin
       port map (
          -- Local Configurations
          localMac           => ethMac,
-         localIp            => IP_ADDR_G,
+         localIp            => localIp, --IP_ADDR_G,
          -- Interface to Ethernet Media Access Controller (MAC)
          obMacMaster        => obMacMaster,
          obMacSlave         => obMacSlave,
@@ -160,9 +167,9 @@ begin
 
    GEN_RSSI : if (RSSI_G = true) generate
       ---------------------------------------------------------------
-      -- Wrapper for RSSI + AXIS packetizer 
-      -- Documentation: https://confluence.slac.stanford.edu/x/1IyfD  
-      ---------------------------------------------------------------      
+      -- Wrapper for RSSI + AXIS packetizer
+      -- Documentation: https://confluence.slac.stanford.edu/x/1IyfD
+      ---------------------------------------------------------------
       U_RssiServer : entity work.RssiCoreWrapper
          generic map (
             TPD_G               => TPD_G,
@@ -211,7 +218,7 @@ begin
 
    ---------------------------------------------------------------
    -- SLAC Register Protocol Version 3, AXI-Lite Interface
-   -- Documentation: https://confluence.slac.stanford.edu/x/cRmVD   
+   -- Documentation: https://confluence.slac.stanford.edu/x/cRmVD
    ---------------------------------------------------------------
    U_SRPv3 : entity work.SrpV3AxiLite
       generic map (
@@ -220,7 +227,7 @@ begin
          GEN_SYNC_FIFO_G     => true,
          AXI_STREAM_CONFIG_G => EMAC_AXIS_CONFIG_C)
       port map (
-         -- Streaming Slave (Rx) Interface (sAxisClk domain) 
+         -- Streaming Slave (Rx) Interface (sAxisClk domain)
          sAxisClk         => ethClk,
          sAxisRst         => ethRst,
          sAxisMaster      => appObMaster,
