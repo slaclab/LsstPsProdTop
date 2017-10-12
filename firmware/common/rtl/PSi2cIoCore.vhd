@@ -370,13 +370,12 @@ begin
    ------------------------------------------------------------------------------
    U_AxiLiteEmpty : entity work.AxiLiteEmpty
       generic map (
-         TPD_G            => TPD_G,
-         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G)
+         TPD_G => TPD_G)
       port map (
          axiClk         => axiClk,
          axiClkRst      => axiRst,
          axiReadMaster  => mAxiReadMasters(AXI_PS_READOUT_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves(AXI_PS_READOUT_INDEX_C),,
+         axiReadSlave   => mAxiReadSlaves(AXI_PS_READOUT_INDEX_C),
          axiWriteMaster => mAxiWriteMasters(AXI_PS_READOUT_INDEX_C),
          axiWriteSlave  => mAxiWriteSlaves(AXI_PS_READOUT_INDEX_C));         
 
