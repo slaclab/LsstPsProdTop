@@ -365,6 +365,19 @@ begin
          -- AqErrDone       => AqErrDone
          -- );
 
+   ------------------------------------------------------------------------------
+   -- Unused AXI-Lite buses must be terminated to prevent hanging the bus forever
+   ------------------------------------------------------------------------------
+   U_AxiLiteEmpty : entity work.AxiLiteEmpty
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         axiClk         => axiClk,
+         axiClkRst      => axiRst,
+         axiReadMaster  => mAxiReadMasters(AXI_PS_READOUT_INDEX_C),
+         axiReadSlave   => mAxiReadSlaves(AXI_PS_READOUT_INDEX_C),
+         axiWriteMaster => mAxiWriteMasters(AXI_PS_READOUT_INDEX_C),
+         axiWriteSlave  => mAxiWriteSlaves(AXI_PS_READOUT_INDEX_C));         
 
    -- Init_mAxiWSeqMasters: for i in 6 downto 0 generate
       -- mAxiWSeqMasters(i) <= AXI_LITE_WRITE_MASTER_INIT_C;

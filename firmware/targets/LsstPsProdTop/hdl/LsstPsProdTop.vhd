@@ -102,7 +102,7 @@ end LsstPsProdTop;
 
 architecture top_level of LsstPsProdTop is
 
-  constant SYS_CLK_FREQ_C : real := 156.0E+6;
+  constant SYS_CLK_FREQ_C : real := 125.0E+6;
 
 
 

@@ -4,6 +4,3 @@
 [submodule "firmware/submodules/surf"]
 	path = firmware/submodules/surf
 	url = git@github.com:slaclab/surf.git
-[submodule "software/rogue"]
-	path = software/rogue
-	url = git@github.com:slaclab/rogue.git
