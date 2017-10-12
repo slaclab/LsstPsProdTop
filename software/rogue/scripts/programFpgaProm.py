@@ -55,7 +55,11 @@ devTop.start(pollEn=False)
 
 # Load the primary MCS file to SPI PROM
 devTop.HW.AxiMicronN25Q.LoadMcsFile(args.mcs)  
-    
+
+# Load the new firmware from the PROM to the FPGA with an IPROG command
+devTop.HW.AxiVersion.FpgaReload.set(0x1)
+# devTop.HW.AxiVersion.FpgaReload.post(0x1) # Waiting for Ben to merge his updates to support post()
+
 # Close out
 devTop.stop()
 exit()
