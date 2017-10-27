@@ -18,7 +18,7 @@ set_property PACKAGE_PIN A8 [get_ports ethRxN]
 
 set_property PACKAGE_PIN E6 [get_ports ethClkN]
 
-set_property PACKAGE_PIN M9 [get_ports vNIn]
+# set_property PACKAGE_PIN M9 [get_ports vNIn]
 
 
 # BANK14

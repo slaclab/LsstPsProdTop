@@ -128,12 +128,12 @@ package UserPkg is
 
      type AxiLiteIndexArray is array (natural range<>) of natural;
      constant PS_AXI_INDEX_ARRAY_C : AxiLiteIndexArray((PS5_AXI_INDEX_C-PS0_AXI_INDEX_C) downto 0) := (
-             PS0_AXI_INDEX_C,
-             PS1_AXI_INDEX_C,
-             PS2_AXI_INDEX_C,
-             PS3_AXI_INDEX_C,
-             PS4_AXI_INDEX_C,
-             PS5_AXI_INDEX_C);
+             5 => PS5_AXI_INDEX_C,
+             4 => PS4_AXI_INDEX_C,
+             3 => PS3_AXI_INDEX_C,
+             2 => PS2_AXI_INDEX_C,
+             1 => PS1_AXI_INDEX_C,
+             0 => PS0_AXI_INDEX_C);
 
 
 

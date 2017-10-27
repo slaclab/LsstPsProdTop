@@ -273,23 +273,27 @@ begin
          axiClk         => axilClk,
          axiRst         => axilRst);
 
-   PS_REB_intf: for i in  0 to PS_REB_TOTAL_C-1 generate
+   PS_REB_intf: for i in  PS_REB_TOTAL_C-1 downto 0 generate
       PSi2cIoCore_Inst : entity work.PSi2cIoCore
             generic map (
                TPD_G           => TPD_G,
                SIMULATION_G    => false,
-               REB_number      => AXI_CROSSBAR_MASTERS_CONFIG_C(PS_AXI_INDEX_ARRAY_C(i)-1).baseAddr(20 downto 17), --"0000",
+               REB_number      => AXI_CROSSBAR_MASTERS_CONFIG_C(PS_AXI_INDEX_ARRAY_C(i)-1).baseAddr(21 downto 18), --"0000",
                AXI_BASE_ADDR_G =>   AXI_CROSSBAR_MASTERS_CONFIG_C(PS_AXI_INDEX_ARRAY_C(i)).baseAddr) --X"00010000")   -- 0x10000
 --               AXI_BASE_ADDR_G =>   AXI_CROSSBAR_MASTERS_CONFIG_C(i+1).baseAddr) --X"00010000")   -- 0x10000
             port map (
                axiClk         => axilClk,
                axiRst         => axilRst,
+			   REB_on         => RegFileOut.reb_on(i),  -- 
+			--   selectCR        => selectCR,
                axiReadMaster  => axilReadMasters(PS_AXI_INDEX_ARRAY_C(i)),
                axiReadSlave   => axilReadSlaves(PS_AXI_INDEX_ARRAY_C(i)),
                axiWriteMaster => axilWriteMasters(PS_AXI_INDEX_ARRAY_C(i)),
                axiWriteSlave  => axilWriteSlaves(PS_AXI_INDEX_ARRAY_C(i)),
                psI2cIn        => psI2cIn(((PS_AXI_INDEX_ARRAY_C(i)-1) * 7) + 6  downto (PS_AXI_INDEX_ARRAY_C(i)-1) * 7),
-               psI2cOut       => psI2cOut(((PS_AXI_INDEX_ARRAY_C(i)-1) * 7) + 6  downto (PS_AXI_INDEX_ARRAY_C(i)-1) * 7)
+               psI2cOut       => psI2cOut(((PS_AXI_INDEX_ARRAY_C(i)-1) * 7) + 6  downto (PS_AXI_INDEX_ARRAY_C(i)-1) * 7),
+			   InitDone        => open,
+               InitFail        => open
 			   );
 
     end generate PS_REB_intf;
@@ -340,20 +344,36 @@ begin
          ------------------------
          -- AXI-Lite: XADC Module
          ------------------------
-         U_Xadc : entity work.AxiXadcWrapper
-           generic map (
-             TPD_G            => TPD_G,
-             AXI_ERROR_RESP_G => AXI_ERROR_RESP_G)
-           port map (
-             axiReadMaster  => axilReadMasters(XADC_INDEX_C),
-             axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
-             axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
-             axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C),
-             axiClk         => axilClk,
-             axiRst         => axilRst,
-             vPIn           => vPIn,
-             vNIn           => vNIn);
+         -- U_Xadc : entity work.AxiXadcWrapper
+           -- generic map (
+             -- TPD_G            => TPD_G,
+             -- AXI_ERROR_RESP_G => AXI_ERROR_RESP_G)
+           -- port map (
+             -- axiReadMaster  => axilReadMasters(XADC_INDEX_C),
+             -- axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
+             -- axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
+             -- axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C),
+             -- axiClk         => axilClk,
+             -- axiRst         => axilRst,
+             -- vPIn           => vPIn,
+             -- vNIn           => vNIn);
 
+			 
+			    ------------------------------------------------------------------------------
+   -- Unused AXI-Lite buses must be terminated to prevent hanging the bus forever
+   ------------------------------------------------------------------------------
+   U_Xadc : entity work.AxiLiteEmpty
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         axiClk         => axilClk,
+         axiClkRst      => axilRst,
+         axiReadMaster  => axilReadMasters(XADC_INDEX_C),
+         axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
+         axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
+         axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C));   
+		 
+		 
          ----------------------
          -- AXI-Lite: Boot Prom
          ----------------------
