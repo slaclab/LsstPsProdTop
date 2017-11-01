@@ -33,16 +33,22 @@ entity PowerMonitorSeqPS is
       TPD_G                : time                   := 1 ns;
       SIMULATION_G         : boolean                := false;
 	  PS_REG_READ_LENGTH_C : positive := 1;
+	  REB_number           : slv(3 downto 0)        := "0000";
 	  FAIL_CNT_C           : integer := 3
 	  );
 
    port (
       axiClk : in sl;
       axiRst : in sl;
+	  
+	  selectCR : in sl;
 
-	  ps_addresses       : in Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0) := (Others => (Others => '0'));
-	  ps_data            : in Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0) := (Others => (Others => '0'));
-	  numbEntry          : in Slv(7 downto 0);
+	  ps_sr_addresses       : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
+	  ps_sr_data            : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
+	  ps_cr_addresses       : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
+	  ps_cr_data            : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
+	  ps_cr_add_addresses  : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
+	  ps_cr_add_data       : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
 	  
       SeqCntlIn       : in  SeqCntlInType;
       SeqCntlOut      : out  SeqCntlOutType;
@@ -62,6 +68,8 @@ architecture rtl of PowerMonitorSeqPS is
       W_WAIT_S,
       R_START_S,
       R_WAIT_S,
+      F_START_S,
+      F_WAIT_S,
       CHECK_OPER_S	  ); 
 
    type RegType is record
@@ -72,6 +80,8 @@ architecture rtl of PowerMonitorSeqPS is
 	  initDone : sl;
 	  ps_on  : sl;
 	  status : slv(1 downto 0);
+	  ps_addresses : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
+	  ps_data : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
       valid : slv(PS_REG_READ_LENGTH_C-1 downto 0);
       inSlv : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
       req   : AxiLiteMasterReqType;
@@ -85,6 +95,8 @@ architecture rtl of PowerMonitorSeqPS is
 	  fail  => '0',
 	  initDone  => '0',
 	  ps_on  => '0',
+	  ps_addresses => (Others => (Others => '0')),
+	  ps_data => (Others => (Others => '0')),
 	  status => (others => '0'),
       valid => (others => '0'),
       inSlv => (others => (others => '0')),
@@ -115,7 +127,8 @@ begin
          axilReadMaster  => mAxilReadMaster,
          axilReadSlave   => mAxilReadSlave);  
 
-   comb : process (ack, axiRst, SeqCntlIn, numbEntry, ps_data, ps_addresses, r) is
+   comb : process (ack, axiRst, SeqCntlIn, ps_cr_add_data, ps_cr_add_addresses,
+                  ps_cr_data, ps_cr_addresses, ps_sr_data, ps_sr_addresses, selectCR, r) is
       variable v : RegType;
       variable i : natural;
    begin
@@ -123,15 +136,55 @@ begin
       v := r;
 	  v.Ps_On := SeqCntlIn.Ps_On;
 	  
-	        -- Loop through the SLV array
-      for i in (PS_REG_READ_LENGTH_C-1) downto 0 loop
-         -- Check for changes in the bus
-         if ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
-            -- Set the flag
-            v.valid(i) := '1';
-         end if;
-      end loop;
+	  if (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") then
+		v.ps_addresses(NUM_CR_ADD_PS_C-1 downto 0) := ps_cr_add_addresses(NUM_CR_ADD_PS_C-1 downto 0);
+		v.ps_data(NUM_CR_ADD_PS_C-1 downto 0) := ps_cr_add_data(NUM_CR_ADD_PS_C-1 downto 0);
 
+        for i in (NUM_CR_ADD_PS_C-1) downto 0 loop
+         -- Check for changes in the bus
+            if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
+            -- Set the flag
+                v.valid(i) := '1';
+            end if;
+         end loop;
+		if(PS_REG_READ_LENGTH_C > NUM_CR_ADD_PS_C ) then
+            for i in (PS_REG_READ_LENGTH_C-1) downto NUM_CR_ADD_PS_C loop
+                v.valid(i) := '1';
+            end loop;
+		end if;
+      elsif (selectCR = '1') then
+		v.ps_addresses(NUM_CR_PS_C-1 downto 0) := ps_cr_addresses(NUM_CR_PS_C-1 downto 0);
+	    v.ps_data(NUM_CR_PS_C-1 downto 0) := ps_cr_data(NUM_CR_PS_C-1 downto 0);
+		
+        for i in (NUM_CR_PS_C-1) downto 0 loop
+         -- Check for changes in the bus
+            if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
+            -- Set the flag
+                v.valid(i) := '1';
+            end if;
+         end loop;
+		if(PS_REG_READ_LENGTH_C > NUM_CR_PS_C )  then
+            for i in (PS_REG_READ_LENGTH_C-1) downto NUM_CR_PS_C loop
+                v.valid(i) := '1';
+            end loop;
+		end if;
+      else
+	    v.ps_addresses(NUM_SR_PS_C-1 downto 0) := ps_sr_addresses(NUM_SR_PS_C-1 downto 0);   
+        v.ps_data(NUM_SR_PS_C-1 downto 0) := ps_sr_data(NUM_SR_PS_C-1 downto 0);
+			   
+        for i in (NUM_SR_PS_C-1) downto 0 loop
+         -- Check for changes in the bus
+            if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
+            -- Set the flag
+                v.valid(i) := '1';
+            end if;
+         end loop;
+		if(PS_REG_READ_LENGTH_C > NUM_SR_PS_C ) then
+            for i in (PS_REG_READ_LENGTH_C-1) downto NUM_SR_PS_C loop
+                v.valid(i) := '1';
+            end loop;
+		end if;
+	  end if;
 
       -- Update the registered value
       --v.inSlv := inSlv;
@@ -161,9 +214,15 @@ begin
             -- Increment the counter
             if (SeqCntlIn.Ps_On = '0') then
 			   v.state        := IDLE_S;
-			elsif r.cnt = (PS_REG_READ_LENGTH_C) then
-               v.cnt := 0;
-			   v.state        := R_START_S;
+			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") and (r.cnt = (NUM_CR_ADD_PS_C)) then
+                v.cnt := 0;
+			    v.state        := R_START_S;
+			elsif (selectCR = '1') and (r.cnt = (NUM_CR_PS_C)) then
+                v.cnt := 0;
+			    v.state        := R_START_S;
+			elsif (selectCR = '0') and (r.cnt = (NUM_SR_PS_C)) then
+                v.cnt := 0;
+			    v.state        := R_START_S;
             elsif(ack.done = '0') then
                v.cnt := r.cnt + 1;
 			   -- Reset the flag
@@ -171,8 +230,8 @@ begin
                -- Setup the AXI-Lite Master request
                v.req.request  := '1';
                v.req.rnw      := '0';   -- Write operation
-               v.req.address  := ps_addresses(r.cnt)(29 downto 0) & "00"; -- shift stored value to mutch bus
-               v.req.wrData   := ps_data(r.cnt);
+               v.req.address  := r.ps_addresses(r.cnt)(29 downto 0) & "00"; -- shift stored value to mutch bus
+               v.req.wrData   := r.ps_data(r.cnt);
 			   -- Next state
                v.state        := W_WAIT_S;
             end if;
@@ -195,27 +254,24 @@ begin
             -- Increment the counter
             if (SeqCntlIn.Ps_On = '0') then
 			   v.state        := IDLE_S;
-			elsif r.cnt = (PS_REG_READ_LENGTH_C) then
-               v.cnt := 0;
-			   v.state        := CHECK_OPER_S;
+			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") and (r.cnt = (NUM_CR_ADD_PS_C)) then
+                v.cnt := 0;
+			    v.state        := F_START_S;
+			elsif (selectCR = '1') and (r.cnt = (NUM_CR_PS_C)) then
+                v.cnt := 0;
+			    v.state        := F_START_S;
+			elsif (selectCR = '0') and (r.cnt = (NUM_SR_PS_C)) then
+                v.cnt := 0;
+			    v.state        := F_START_S;				
             elsif(ack.done = '0') then
                v.cnt := r.cnt + 1;
 			   v.req.request  := '1';
                v.req.rnw      := '1';   -- Read operation
-               v.req.address  := ps_addresses(r.cnt)(29 downto 0) & "00"; -- shift stored value to mutch bus
+               v.req.address  := r.ps_addresses(r.cnt)(29 downto 0) & "00"; -- shift stored value to mutch bus
 			   -- Next state
                v.state        := R_WAIT_S;
             end if;
 	  
-            -- Check the valid flag and transaction completed
- --           if (r.valid(r.cnt) = '1') and (ack.done = '0') then
-               -- Reset the flag
- --              v.valid(r.cnt) := '0';
-               -- Setup the AXI-Lite Master request
- --              v.req.request  := '1';
- --              v.req.rnw      := '1';   -- Read operation
- --              v.req.address  := ps_addresses(r.cnt)(29 downto 0) & "00"; -- shift stored value to mutch bus
- --           end if;
          ----------------------------------------------------------------------
          when R_WAIT_S =>
 		 v.stV   := "0101";
@@ -231,8 +287,39 @@ begin
                v.state       := R_START_S;
             end if;
       ----------------------------------------------------------------------
+         when F_START_S =>   -- Fault state to clear latched fault during power up
+		    v.stV   := "0110";
+            -- Increment the counter
+            if (SeqCntlIn.Ps_On = '0') then
+			   v.state        := IDLE_S;
+			elsif (r.cnt = (2)) then  -- read twice just to make shure it is cleared
+                v.cnt := 0;
+			    v.state        := CHECK_OPER_S;				
+            elsif(ack.done = '0') then
+               v.cnt := r.cnt + 1;
+			   v.req.request  := '1';
+               v.req.rnw      := '1';   -- Read operation
+               v.req.address  := x"0000000C"; -- to read address 3
+			   -- Next state
+               v.state        := F_WAIT_S;
+            end if;
+	  
+         ----------------------------------------------------------------------
+         when F_WAIT_S =>
+		 v.stV   := "0111";
+            -- Wait for DONE to set
+            if (SeqCntlIn.Ps_On = '0') then
+			   v.state        := IDLE_S;
+			elsif ack.done = '1' then
+               -- Reset the flag
+               v.req.request        := '0';
+               v.status             := ack.resp OR r.status;
+               -- Next state
+               v.state       := F_START_S;
+            end if;
+      ----------------------------------------------------------------------
          when CHECK_OPER_S =>
-		 v.stV   := "0110";
+		 v.stV   := "1000";
             -- Increment the counter
             if (SeqCntlIn.Ps_On = '0') then
 			   v.state        := IDLE_S;

@@ -173,7 +173,7 @@ architecture rtl of PSi2cIoCore is
        dataSize   => 16,
        addrSize   => 8,
        endianness => '1',
-       repeatStart => '0'));
+       repeatStart => '1'));
 
    constant AXI_I2C_BRIDGE_PS6_CONFIG_C : I2cAxiLiteDevArray := (
       0           =>                    -- LTC2945
@@ -189,7 +189,7 @@ architecture rtl of PSi2cIoCore is
        dataSize   => 16,
        addrSize   => 8,
        endianness => '1',
-       repeatStart => '0'));
+       repeatStart => '1'));
 
    signal i2cRegMastersIn  : I2cRegMasterInArray(6 downto 0);
    signal i2cRegMastersOut : I2cRegMasterOutArray(6 downto 0);

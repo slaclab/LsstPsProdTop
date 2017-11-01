@@ -25,6 +25,7 @@ use work.AxiLitePkg.all;
 --use work.Version.all;
 use work.UserPkg.all;
 use work.I2cPkg.all;
+use work.ThresholdPkg.all;
 
 --use work.TextUtilPkg.all;
 
@@ -49,7 +50,16 @@ entity RegFile is
 --      Reg2SeqData : out Reg2SeqDataAll_type;
 --      Seq2RegData : in  Seq2RegDataAll_type := ((SEQ2REGDATA_C), (SEQ2REGDATA_C),(SEQ2REGDATA_C),
 --                                               (SEQ2REGDATA_C),(SEQ2REGDATA_C),(SEQ2REGDATA_C));
-
+	  configDone   : in slv(5 downto 0);
+	  allRunning   : in slv(5 downto 0);
+	  initDone     : in slv(5 downto 0);
+	  initFail     : in slv(5 downto 0);
+	  selectCR     : in sl;
+	  StatusSeq    : in slv32Array(5 downto 0);
+	  powerFailure : in slv(5 downto 0);
+	  din_out      : in slv(41 downto 0);
+	  reb_on_out   : in slv(5 downto 0);
+		 
       -- Optional DS2411 interface
       fdSerSdio : inout sl := 'Z';
       -- new user stuff for register file
@@ -176,10 +186,9 @@ begin
    end generate GEN_DS2411;
 
 
-
    comb : process (axiRst, axiReadMaster, axiWriteMaster, dnaValid, dnaValue, fdSerial, fdValid,  --Seq2RegData,
-                   RegFileIn, masterReset,
-                   r,
+                   configDone, allRunning, initDone, initFail, StatusSeq, powerFailure, RegFileIn, masterReset,
+                   selectCR, din_out, reb_on_out, r,
                    -- stringRom,
                    temp_i2cRegMasterOut) is
       variable v            : RegType;
@@ -314,6 +323,7 @@ begin
                v.Test_outOE :=  axiWriteMaster.wdata(23 downto 16);
                v.LED_on := axiWriteMaster.wdata(10 downto 8);
                v.Test_out :=  axiWriteMaster.wdata(31 downto 24);
+	  
             when X"e0" =>
                   v.DS75LV_cntl := axiWriteMaster.wdata(31 downto 0);
 
@@ -335,7 +345,12 @@ begin
                   when X"00" =>
                      v.axiReadSlave.rdata := x"0000020a"; --FPGA_VERSION_C;
                   when X"01" =>
-                     v.axiReadSlave.rdata := r.scratchPad;
+                    -- v.axiReadSlave.rdata := r.scratchPad;
+					 v.axiReadSlave.rdata :=  
+					      NOT(din_out(20+21)) & din_out(19+21) & NOT(din_out(18+21)) & din_out(17+21 downto 14+21) & reb_on_out(5)
+					    & NOT(din_out(13+21)) & din_out(12+21) & NOT(din_out(11+21)) & din_out(10+21 downto 7+21) & reb_on_out(4) 
+						& NOT(din_out(6+21)) & din_out(5+21) & NOT(din_out(4+21)) & din_out(3+21 downto 0+21) & reb_on_out(3)
+						& r.scratchPad(7 downto 0);
                   when X"02" =>
                      v.axiReadSlave.rdata := ite(dnaValid = '1', dnaValue(63 downto 32), X"00000000");
                   when X"03" =>
@@ -346,7 +361,12 @@ begin
                      v.axiReadSlave.rdata(8) := RegFileIn.enable_in;
                      v.axiReadSlave.rdata(4 downto 0) := RegFileIn.GA;
                   when X"05" =>
-                     v.axiReadSlave.rdata := r.spare;
+                     --v.axiReadSlave.rdata := r.spare;
+					 v.axiReadSlave.rdata :=  
+					      NOT(din_out(20)) & din_out(19) & NOT(din_out(18)) & din_out(17 downto 14) & reb_on_out(2)
+					    & NOT(din_out(13)) & din_out(12) & NOT(din_out(11)) & din_out(10 downto 7) & reb_on_out(1) 
+						& NOT(din_out(6)) & din_out(5) & NOT(din_out(4)) & din_out(3 downto 0) & reb_on_out(0)
+						& r.spare(7 downto 0);
                   when X"06" =>
                      v.axiReadSlave.rdata := r.StatusData_D(31 downto 0);
                   when X"07" =>
@@ -372,346 +392,741 @@ begin
                        v.axiReadSlave.rdata(17 downto 0) := r.EnableAlarm(5) &  r.REB_enable(5) &  r.REB_on_off(5) & r.EnableAlarm(4) & r.REB_enable(4) &  r.REB_on_off(4)
                                                             & r.EnableAlarm(3) & r.REB_enable(3) &  r.REB_on_off(3) & r.EnableAlarm(2) & r.REB_enable(2) &  r.REB_on_off(2)
                                                             & r.EnableAlarm(1) & r.REB_enable(1) &  r.REB_on_off(1) & r.EnableAlarm(0) & r.REB_enable(0) &  r.REB_on_off(0);
-                   -- when X"0f" =>
-                        -- v.axiReadSlave.rdata(31 downto 24) := r.Test_out;
-                        -- v.axiReadSlave.rdata(23 downto 16) := r.Test_outOE;
-                        -- v.axiReadSlave.rdata(15 downto 11) := (Others => '0');
-                        -- v.axiReadSlave.rdata(10 downto 8) := r.LED_on;
-                        -- v.axiReadSlave.rdata(7 downto 0) := RegFileIn.TestIn;
-                  -- when X"10" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.CONFIG_WAIT;
-                  -- when X"11" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.ON_WAIT;
-                  -- when X"12" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.PS0;
-                  -- when X"13" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.PS1;
-                  -- when X"14" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.PS34;
-                  -- when X"15" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.PS5;
-                  -- when X"16" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.PS2;
-                  -- when X"17" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.PS6;
-                  -- when X"18" =>
-                        -- v.axiReadSlave.rdata := WAIT_TIMEOUT.PS_OK;
-                  -- when X"19" =>
-                       -- v.axiReadSlave.rdata := WAIT_TIMEOUT.C5SEC_WAIT_C;
-                  -- when X"1a" =>
-                       -- v.axiReadSlave.rdata := X"00" & Seq2RegData(2).SeqState & Seq2RegData(1).SeqState & Seq2RegData(0).SeqState;
-                  -- when X"1b" =>
-                       -- v.axiReadSlave.rdata := X"00" & Seq2RegData(5).SeqState & Seq2RegData(4).SeqState & Seq2RegData(3).SeqState;
-                  -- when X"1c" =>
-                       -- v.axiReadSlave.rdata := X"00" & Seq2RegData(2).FailedState & Seq2RegData(1).FailedState & Seq2RegData(0).FailedState;
-                  -- when X"1d" =>
-                       -- v.axiReadSlave.rdata := X"00" & Seq2RegData(5).FailedState & Seq2RegData(4).FailedState & Seq2RegData(3).FailedState;
-                  -- when X"1e" =>
-                        -- v.axiReadSlave.rdata :=  X"00" & Seq2RegData(2).FailedTO  & Seq2RegData(2).FailedStatus
-                                                       -- & Seq2RegData(1).FailedTO  & Seq2RegData(1).FailedStatus
-                                                       -- & Seq2RegData(0).FailedTO  & Seq2RegData(0).FailedStatus;
-                  -- when X"1f" =>
-                        -- v.axiReadSlave.rdata :=  X"00" & Seq2RegData(5).FailedTO  & Seq2RegData(5).FailedStatus
-                                                       -- & Seq2RegData(4).FailedTO  & Seq2RegData(4).FailedStatus
-                                                       -- & Seq2RegData(3).FailedTO  & Seq2RegData(3).FailedStatus;
-                  -- when X"20" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(0);
-                        -- when X"21" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(2);
-                        -- when X"22" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(4);
-                        -- when X"23" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(0).reportFaultArr(0).powerValuesArOut(6);
-                        -- when X"24" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(0);
-                        -- when X"25" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(2);
-                        -- when X"26" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(4);
-                        -- when X"27" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(0).reportFaultArr(1).powerValuesArOut(6);
-                        -- when X"28" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(0);
-                        -- when X"29" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(2);
-                        -- when X"2a" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(4);
-                        -- when X"2b" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(0).reportFaultArr(2).powerValuesArOut(6);
-                        -- when X"2c" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(0);
-                        -- when X"2d" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(2);
-                        -- when X"2e" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(4);
-                        -- when X"2f" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(0).reportFaultArr(3).powerValuesArOut(6);
-                  -- when X"30" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(0);
-                  -- when X"31" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(2);
-                  -- when X"32" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(4);
-                  -- when X"33" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(0).reportFaultArr(4).powerValuesArOut(6);
-                  -- when X"34" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(0);
-                  -- when X"35" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(2);
-                  -- when X"36" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(4);
-                  -- when X"37" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(0).reportFaultArr(5).powerValuesArOut(6);
-                  -- when X"38" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(0);
-                  -- when X"39" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(2);
-                  -- when X"3a" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(4);
-                  -- when X"3b" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(0).reportFaultArr(6).powerValuesArOut(6);
-                  -- when X"3c" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"3d" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"3e" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"3f" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
 
-                  -- when X"40" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(0);
-                        -- when X"41" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(2);
-                        -- when X"42" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(4);
-                        -- when X"43" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(1).reportFaultArr(0).powerValuesArOut(6);
-                        -- when X"44" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(0);
-                        -- when X"45" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(2);
-                        -- when X"46" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(4);
-                        -- when X"47" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(1).reportFaultArr(1).powerValuesArOut(6);
-                        -- when X"48" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(0);
-                        -- when X"49" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(2);
-                        -- when X"4a" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(4);
-                        -- when X"4b" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(1).reportFaultArr(2).powerValuesArOut(6);
-                        -- when X"4c" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(0);
-                        -- when X"4d" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(2);
-                        -- when X"4e" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(4);
-                        -- when X"4f" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(1).reportFaultArr(3).powerValuesArOut(6);
-                  -- when X"50" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(0);
-                  -- when X"51" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(2);
-                  -- when X"52" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(4);
-                  -- when X"53" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(1).reportFaultArr(4).powerValuesArOut(6);
-                  -- when X"54" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(0);
-                  -- when X"55" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(2);
-                  -- when X"56" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(4);
-                  -- when X"57" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(1).reportFaultArr(5).powerValuesArOut(6);
-                  -- when X"58" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(0);
-                  -- when X"59" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(2);
-                  -- when X"5a" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(4);
-                  -- when X"5b" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(1).reportFaultArr(6).powerValuesArOut(6);
-                  -- when X"5c" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"5d" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"5e" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"5f" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
+															
+				  when X"10" =>
+                     v.axiReadSlave.rdata := selectCR & '0' & allRunning & "00" & configDone &
+					                         "00" & initDone & "00" & initFail;
+				  when X"11" =>
+                     v.axiReadSlave.rdata := x"000000" & "00" & powerFailure;
 
-                  -- when X"60" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(0);
-                        -- when X"61" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(2);
-                        -- when X"62" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(4);
-                        -- when X"63" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(2).reportFaultArr(0).powerValuesArOut(6);
-                        -- when X"64" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(0);
-                        -- when X"65" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(2);
-                        -- when X"66" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(4);
-                        -- when X"67" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(2).reportFaultArr(1).powerValuesArOut(6);
-                        -- when X"68" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(0);
-                        -- when X"69" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(2);
-                        -- when X"6a" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(4);
-                        -- when X"6b" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(2).reportFaultArr(2).powerValuesArOut(6);
-                        -- when X"6c" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(1)
-                                                                               -- & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(0);
-                        -- when X"6d" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(3)
-                                                                               -- & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(2);
-                        -- when X"6e" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(5)
-                                                                               -- & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(4);
-                        -- when X"6f" =>
-                                    -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(7)
-                                                                               -- & Seq2RegData(2).reportFaultArr(3).powerValuesArOut(6);
-                  -- when X"70" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(0);
-                  -- when X"71" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(2);
-                  -- when X"72" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(4);
-                  -- when X"73" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(2).reportFaultArr(4).powerValuesArOut(6);
-                  -- when X"74" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(0);
-                  -- when X"75" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(2);
-                  -- when X"76" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(4);
-                  -- when X"77" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(2).reportFaultArr(5).powerValuesArOut(6);
-                  -- when X"78" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(1)
-                                                                         -- & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(0);
-                  -- when X"79" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(3)
-                                                                         -- & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(2);
-                  -- when X"7a" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(5)
-                                                                         -- & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(4);
-                  -- when X"7b" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00" & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(7)
-                                                                         -- & Seq2RegData(2).reportFaultArr(6).powerValuesArOut(6);
-                  -- when X"7c" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"7d" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"7e" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  -- when X"7f" =>
-                              -- v.axiReadSlave.rdata(31 downto 0) := X"00000000";
-                  when X"e0" =>
+				 when X"12" =>
+				     v.axiReadSlave.rdata := StatusSeq(0);
+				 when X"13" =>
+				     v.axiReadSlave.rdata := StatusSeq(1);
+				 when X"14" =>
+				     v.axiReadSlave.rdata := StatusSeq(2);
+				 when X"15" =>
+				     v.axiReadSlave.rdata := StatusSeq(3);
+				 when X"16" =>
+				     v.axiReadSlave.rdata := StatusSeq(4);
+				 when X"17" =>
+				     v.axiReadSlave.rdata := StatusSeq(5);
+					 
+					 
+				 when X"e0" =>
                         v.axiReadSlave.rdata := r.DS75LV_cntl;
-                  when X"e1" =>
+                 when X"e1" =>
                          v.axiReadSlave.rdata := r.DS75LV_result;
 
                   when others =>
                      axiReadResp := AXI_ERROR_RESP_G;
                end case;
 
+
             when "01" =>
-                case (axiReadMaster.araddr(9 downto 8)) is
-                when "00" =>
-           --           v.axiReadSlave.rdata := PS_REPORT_THRSH_B0_C(conv_integer(axiReadMaster.araddr(7 downto 2)));
-                when "01" =>
-           --           v.axiReadSlave.rdata := PS_REPORT_THRSH_B1_C(conv_integer(axiReadMaster.araddr(7 downto 2)));
+                case (axiReadMaster.araddr(9 downto 2)) is
+				
+				-- SR Digital
+                when x"00" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(0).address;
+			    when x"01" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(0).data;
+                when x"02" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(1).address;
+			    when x"03" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(1).data;
+                when x"04" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(2).address;
+			    when x"05" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(2).data;
+                when x"06" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(3).address;
+			    when x"07" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(3).data;					  
+                when x"08" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(4).address;
+			    when x"09" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(4).data;
+                when x"0a" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(5).address;
+			    when x"0b" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(5).data;
+                when x"0c" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(6).address;
+			    when x"0d" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(6).data;
+                when x"0e" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(7).address;
+			    when x"0f" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(7).data;
+                when x"10" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(8).address;
+			    when x"11" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(8).data;
+                when x"12" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(9).address;
+			    when x"13" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(9).data;
+                when x"14" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(10).address;
+			    when x"15" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(10).data;
+					  
+				-- SR Analog
+                when x"20" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(0).address;
+			    when x"21" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(0).data;
+                when x"22" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(1).address;
+			    when x"23" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(1).data;
+                when x"24" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(2).address;
+			    when x"25" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(2).data;
+                when x"26" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(3).address;
+			    when x"27" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(3).data;					  
+                when x"28" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(4).address;
+			    when x"29" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(4).data;
+                when x"2a" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(5).address;
+			    when x"2b" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(5).data;
+                when x"2c" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(6).address;
+			    when x"2d" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(6).data;
+                when x"2e" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(7).address;
+			    when x"2f" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(7).data;
+                when x"30" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(8).address;
+			    when x"31" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(8).data;
+                when x"32" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(9).address;
+			    when x"33" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(9).data;
+                when x"34" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(10).address;
+			    when x"35" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(10).data;
+
+				-- SR OD
+                when x"40" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(0).address;
+			    when x"41" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(0).data;
+                when x"42" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(1).address;
+			    when x"43" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(1).data;
+                when x"44" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(2).address;
+			    when x"45" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(2).data;
+                when x"46" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(3).address;
+			    when x"47" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(3).data;					  
+                when x"48" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(4).address;
+			    when x"49" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(4).data;
+                when x"4a" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(5).address;
+			    when x"4b" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(5).data;
+                when x"4c" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(6).address;
+			    when x"4d" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(6).data;
+                when x"4e" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(7).address;
+			    when x"4f" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(7).data;
+                when x"50" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(8).address;
+			    when x"51" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(8).data;
+                when x"52" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(9).address;
+			    when x"53" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(9).data;
+                when x"54" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(10).address;
+			    when x"55" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(10).data;
+					  
+				-- SR Clk High
+                when x"60" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(0).address;
+			    when x"61" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(0).data;
+                when x"62" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(1).address;
+			    when x"63" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(1).data;
+                when x"64" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(2).address;
+			    when x"65" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(2).data;
+                when x"66" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(3).address;
+			    when x"67" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(3).data;					  
+                when x"68" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(4).address;
+			    when x"69" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(4).data;
+                when x"6a" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(5).address;
+			    when x"6b" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(5).data;
+                when x"6c" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(6).address;
+			    when x"6d" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(6).data;
+                when x"6e" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(7).address;
+			    when x"6f" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(7).data;
+                when x"70" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(8).address;
+			    when x"71" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(8).data;
+                when x"72" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(9).address;
+			    when x"73" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(9).data;
+                when x"74" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(10).address;
+			    when x"75" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(10).data;
+
+				-- SR Clk Low
+                when x"80" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(0).address;
+			    when x"81" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(0).data;
+                when x"82" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(1).address;
+			    when x"83" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(1).data;
+                when x"84" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(2).address;
+			    when x"85" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(2).data;
+                when x"86" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(3).address;
+			    when x"87" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(3).data;					  
+                when x"88" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(4).address;
+			    when x"89" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(4).data;
+                when x"8a" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(5).address;
+			    when x"8b" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(5).data;
+                when x"8c" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(6).address;
+			    when x"8d" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(6).data;
+                when x"8e" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(7).address;
+			    when x"8f" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(7).data;
+                when x"90" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(8).address;
+			    when x"91" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(8).data;
+                when x"92" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(9).address;
+			    when x"93" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(9).data;
+                when x"94" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(10).address;
+			    when x"95" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(10).data;
+
+				-- SR Heater
+                when x"a0" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(0).address;
+			    when x"a1" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(0).data;
+                when x"a2" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(1).address;
+			    when x"a3" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(1).data;
+                when x"a4" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(2).address;
+			    when x"a5" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(2).data;
+                when x"a6" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(3).address;
+			    when x"a7" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(3).data;					  
+                when x"a8" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(4).address;
+			    when x"a9" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(4).data;
+                when x"aa" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(5).address;
+			    when x"ab" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(5).data;
+                when x"ac" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(6).address;
+			    when x"ad" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(6).data;
+                when x"ae" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(7).address;
+			    when x"af" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(7).data;
+                when x"b0" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(8).address;
+			    when x"b1" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(8).data;
+                when x"b2" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(9).address;
+			    when x"b3" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(9).data;
+                when x"b4" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(10).address;
+			    when x"b5" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(10).data;
+					  
+				-- SR Bias
+                when x"c0" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(0).address;
+			    when x"c1" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(0).data;
+                when x"c2" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(1).address;
+			    when x"c3" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(1).data;
+                when x"c4" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(2).address;
+			    when x"c5" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(2).data;
+                when x"c6" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(3).address;
+			    when x"c7" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(3).data;					  
+                when x"c8" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(4).address;
+			    when x"c9" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(4).data;
+                when x"ca" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(5).address;
+			    when x"cb" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(5).data;
+                when x"cc" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(6).address;
+			    when x"cd" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(6).data;
+                when x"ce" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(7).address;
+			    when x"cf" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(7).data;
+                when x"d0" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(8).address;
+			    when x"d1" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(8).data;
+                when x"d2" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(9).address;
+			    when x"d3" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(9).data;
+                when x"d4" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(10).address;
+			    when x"d5" =>
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(10).data;					  
+
                 when others =>
-                      axiReadResp := AXI_ERROR_RESP_G;
-                end case;
-            --when "10" =>
-            --   v.axiReadSlave.rdata := stringRom(conv_integer(axiReadMaster.araddr(7 downto 2)));
+                     axiReadResp := AXI_ERROR_RESP_G;
+            end case;					
+
+-- CR					
+	    when "10" =>
+            case (axiReadMaster.araddr(9 downto 2)) is
+				
+				-- CR Digital
+                when x"00" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(0).address;
+			    when x"01" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(0).data;
+                when x"02" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(1).address;
+			    when x"03" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(1).data;
+                when x"04" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(2).address;
+			    when x"05" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(2).data;
+                when x"06" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(3).address;
+			    when x"07" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(3).data;					  
+                when x"08" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(4).address;
+			    when x"09" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(4).data;
+                when x"0a" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(5).address;
+			    when x"0b" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(5).data;
+                when x"0c" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(6).address;
+			    when x"0d" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(6).data;
+                when x"0e" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(7).address;
+			    when x"0f" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(7).data;
+                when x"10" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(8).address;
+			    when x"11" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(8).data;
+                when x"12" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(9).address;
+			    when x"13" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(9).data;
+                when x"14" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(10).address;
+			    when x"15" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(10).data;
+					  
+				-- CR Analog
+                when x"20" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(0).address;
+			    when x"21" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(0).data;
+                when x"22" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(1).address;
+			    when x"23" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(1).data;
+                when x"24" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(2).address;
+			    when x"25" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(2).data;
+                when x"26" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(3).address;
+			    when x"27" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(3).data;					  
+                when x"28" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(4).address;
+			    when x"29" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(4).data;
+                when x"2a" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(5).address;
+			    when x"2b" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(5).data;
+                when x"2c" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(6).address;
+			    when x"2d" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(6).data;
+                when x"2e" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(7).address;
+			    when x"2f" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(7).data;
+                when x"30" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(8).address;
+			    when x"31" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(8).data;
+                when x"32" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(9).address;
+			    when x"33" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(9).data;
+                when x"34" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(10).address;
+			    when x"35" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(10).data;
+
+				-- CR OD
+                when x"40" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(0).address;
+			    when x"41" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(0).data;
+                when x"42" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(1).address;
+			    when x"43" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(1).data;
+                when x"44" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(2).address;
+			    when x"45" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(2).data;
+                when x"46" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(3).address;
+			    when x"47" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(3).data;					  
+                when x"48" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(4).address;
+			    when x"49" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(4).data;
+                when x"4a" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(5).address;
+			    when x"4b" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(5).data;
+                when x"4c" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(6).address;
+			    when x"4d" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(6).data;
+                when x"4e" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(7).address;
+			    when x"4f" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(7).data;
+                when x"50" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(8).address;
+			    when x"51" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(8).data;
+                when x"52" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(9).address;
+			    when x"53" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(9).data;
+                when x"54" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(10).address;
+			    when x"55" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(10).data;
+					  
+				-- CR Clk High
+                when x"60" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(0).address;
+			    when x"61" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(0).data;
+                when x"62" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(1).address;
+			    when x"63" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(1).data;
+                when x"64" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(2).address;
+			    when x"65" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(2).data;
+                when x"66" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(3).address;
+			    when x"67" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(3).data;					  
+                when x"68" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(4).address;
+			    when x"69" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(4).data;
+                when x"6a" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(5).address;
+			    when x"6b" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(5).data;
+                when x"6c" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(6).address;
+			    when x"6d" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(6).data;
+                when x"6e" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(7).address;
+			    when x"6f" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(7).data;
+                when x"70" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(8).address;
+			    when x"71" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(8).data;
+                when x"72" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(9).address;
+			    when x"73" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(9).data;
+                when x"74" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(10).address;
+			    when x"75" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(10).data;
+
+				-- CR Clk Low
+                when x"80" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(0).address;
+			    when x"81" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(0).data;
+                when x"82" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(1).address;
+			    when x"83" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(1).data;
+                when x"84" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(2).address;
+			    when x"85" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(2).data;
+                when x"86" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(3).address;
+			    when x"87" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(3).data;					  
+                when x"88" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(4).address;
+			    when x"89" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(4).data;
+                when x"8a" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(5).address;
+			    when x"8b" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(5).data;
+                when x"8c" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(6).address;
+			    when x"8d" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(6).data;
+                when x"8e" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(7).address;
+			    when x"8f" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(7).data;
+                when x"90" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(8).address;
+			    when x"91" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(8).data;
+                when x"92" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(9).address;
+			    when x"93" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(9).data;
+                when x"94" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(10).address;
+			    when x"95" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(10).data;
+
+				-- CR dPhi
+                when x"a0" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(0).address;
+			    when x"a1" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(0).data;
+                when x"a2" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(1).address;
+			    when x"a3" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(1).data;
+                when x"a4" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(2).address;
+			    when x"a5" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(2).data;
+                when x"a6" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(3).address;
+			    when x"a7" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(3).data;					  
+                when x"a8" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(4).address;
+			    when x"a9" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(4).data;
+                when x"aa" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(5).address;
+			    when x"ab" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(5).data;
+                when x"ac" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(6).address;
+			    when x"ad" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(6).data;
+                when x"ae" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(7).address;
+			    when x"af" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(7).data;
+                when x"b0" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(8).address;
+			    when x"b1" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(8).data;
+                when x"b2" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(9).address;
+			    when x"b3" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(9).data;
+                when x"b4" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(10).address;
+			    when x"b5" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(10).data;
+					  
+				-- CR Bias
+                when x"c0" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(0).address;
+			    when x"c1" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(0).data;
+                when x"c2" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(1).address;
+			    when x"c3" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(1).data;
+                when x"c4" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(2).address;
+			    when x"c5" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(2).data;
+                when x"c6" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(3).address;
+			    when x"c7" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(3).data;					  
+                when x"c8" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(4).address;
+			    when x"c9" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(4).data;
+                when x"ca" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(5).address;
+			    when x"cb" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(5).data;
+                when x"cc" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(6).address;
+			    when x"cd" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(6).data;
+                when x"ce" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(7).address;
+			    when x"cf" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(7).data;
+                when x"d0" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(8).address;
+			    when x"d1" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(8).data;
+                when x"d2" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(9).address;
+			    when x"d3" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(9).data;
+                when x"d4" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(10).address;
+			    when x"d5" =>
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(10).data;					  					  
+
+				-- CR Heater
+                when x"e0" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(0).address;
+			    when x"e1" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(0).data;
+                when x"e2" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(1).address;
+			    when x"e3" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(1).data;
+                when x"e4" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(2).address;
+			    when x"e5" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(2).data;
+                when x"e6" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(3).address;
+			    when x"e7" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(3).data;					  
+                when x"e8" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(4).address;
+			    when x"e9" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(4).data;
+                when x"ea" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(5).address;
+			    when x"eb" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(5).data;
+                when x"ec" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(6).address;
+			    when x"ed" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(6).data;
+                when x"ee" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(7).address;
+			    when x"ef" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(7).data;
+                when x"f0" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(8).address;
+			    when x"f1" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(8).data;
+                when x"f2" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(9).address;
+			    when x"f3" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(9).data;
+                when x"f4" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(10).address;
+			    when x"f5" =>
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(10).data;					  
+                when others =>
+                     axiReadResp := AXI_ERROR_RESP_G;	
+			end case; 
             when others =>
                axiReadResp := AXI_ERROR_RESP_G;
          end case;
@@ -748,9 +1163,25 @@ begin
             -- Reg2SeqData(i).AquireStartP  <= r.AquireStartP(i);
             -- Reg2SeqData(i).Enable_in  <= RegFileIn.enable_in;
       -- end loop;
-
-      temp_i2cRegMasterIn.i2cAddr <= "00" & X"48";
-      temp_i2cRegMasterIn.tenbit <= '0';
+      case (r.DS75LV_cntl(22 downto 20)) is
+            when "000" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"48";
+			when "001" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"49";
+            when "010" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4a";
+			when "011" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4b";				
+            when "100" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4c";
+			when "101" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4d";				
+            when "110" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4e";
+			when "111" =>
+                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4e";
+	  end case;
+	  temp_i2cRegMasterIn.tenbit <= '0';
       temp_i2cRegMasterIn.regAddr <= X"0000000" & "00" & r.DS75LV_cntl(17 downto 16);  -- specify
       temp_i2cRegMasterIn.regWrData <= X"0000" & "00" & r.DS75LV_cntl(7 downto 0) & r.DS75LV_cntl(15 downto 8);  -- Endieness
       temp_i2cRegMasterIn.regOp <= r.DS75LV_cntl(18);  -- to borrow

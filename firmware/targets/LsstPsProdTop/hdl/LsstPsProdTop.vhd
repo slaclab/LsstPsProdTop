@@ -65,6 +65,7 @@ entity LsstPsProdTop is
     sync_DCDC : out slv(5 downto 0);
     reb_on    : out slv(5 downto 0);
     dummy     : out sl;
+	GA        : in  slv(3 downto 0);
 
       -- i2c
     -- Line to FO transiver
@@ -163,6 +164,26 @@ architecture top_level of LsstPsProdTop is
 
    signal heartBeat        : sl;
    signal ethLinkUp        : sl;
+   
+   signal rebOnOff         : slv(5 downto 0);
+   signal rebOnOff_add     : slv(5 downto 0);
+   signal reb_on_l         : slv(5 downto 0);
+   signal configDone       : slv(5 downto 0);
+   signal allRunning       : slv(5 downto 0);
+   signal initDone_add     : slv(5 downto 0);
+   signal initFail_add     : slv(5 downto 0);
+   signal initDone         : slv(5 downto 0);
+   signal initFail         : slv(5 downto 0);
+   signal powerFailure     : slv(5 downto 0);   
+   signal selectCR         : sl; 
+   signal din_l            : slv(47 downto 0); 
+   signal din_out          : slv(41 downto 0);
+   signal dout_l           : slv(95 downto 0);   
+   signal dout             : slv(83 downto 0);
+   signal StatusSeq        : slv32Array(5 downto 0); 
+      
+   
+
 
    attribute dont_touch                 : string;
    attribute dont_touch of RegFileOut    : signal is "true";
@@ -268,6 +289,15 @@ begin
          axiWriteSlave  => axilWriteSlaves(REGFILE_INDEX_C),
          RegFileIn      => RegFileIn,
          RegFileOut     => RegFileOut,
+		 configDone     => configDone,
+		 allRunning     => allRunning,
+		 initDone       => initDone,
+		 initFail       => initFail,
+		 selectCR       => selectCR,
+         StatusSeq      => StatusSeq,
+         powerFailure   => powerFailure,   
+		 din_out        => din_out,
+		 reb_on_out     => reb_on_l,
 
          fdSerSdio      => serID,
          axiClk         => axilClk,
@@ -284,7 +314,7 @@ begin
             port map (
                axiClk         => axilClk,
                axiRst         => axilRst,
-			   REB_on         => RegFileOut.reb_on(i),  -- 
+			   REB_on         => reb_on_l(i), --RegFileOut.reb_on(i),  -- 
 			--   selectCR        => selectCR,
                axiReadMaster  => axilReadMasters(PS_AXI_INDEX_ARRAY_C(i)),
                axiReadSlave   => axilReadSlaves(PS_AXI_INDEX_ARRAY_C(i)),
@@ -292,15 +322,94 @@ begin
                axiWriteSlave  => axilWriteSlaves(PS_AXI_INDEX_ARRAY_C(i)),
                psI2cIn        => psI2cIn(((PS_AXI_INDEX_ARRAY_C(i)-1) * 7) + 6  downto (PS_AXI_INDEX_ARRAY_C(i)-1) * 7),
                psI2cOut       => psI2cOut(((PS_AXI_INDEX_ARRAY_C(i)-1) * 7) + 6  downto (PS_AXI_INDEX_ARRAY_C(i)-1) * 7),
-			   InitDone        => open,
-               InitFail        => open
+			   InitDone        => initDone(i),
+               InitFail        => initFail(i)
 			   );
 
+      REBSequencer_Inst : entity work.REBSequencer
+            generic map (
+               TPD_G           => TPD_G,
+               SIMULATION_G    => false,
+               REB_number      => AXI_CROSSBAR_MASTERS_CONFIG_C(PS_AXI_INDEX_ARRAY_C(i)-1).baseAddr(21 downto 18))
+            port map (
+               axiClk         => axilClk,
+               axiRst         => axilRst,
+			   rebOn          => RegFileOut.reb_on(i),  -- 
+			   hvOn           => RegFileOut.din(i*7 + 6),
+			   rebOnOff       => rebOnOff(i),
+			   rebOnOff_add   => rebOnOff_add(i),
+			   configDone     => configDone(i),
+			   allRunning     => allRunning(i),
+			   initDone_add   => initDone_add(i),
+			   initFail_add   => initFail_add(i),
+			   initDone       => initDone(i),
+			   initFail       => initFail(i),
+			   selectCR       => selectCR,
+               din            => din_l(i*8 +7 downto i*8),
+			   dout           => dout_l(i*16 +15 downto i*16),
+               Status         => StatusSeq(i),
+               powerFailure   => powerFailure(i)
+			   );			   
+			   
     end generate PS_REB_intf;
-
-    led(2)  <= heartBeat and not(axilRst);
+	initDone_add <= "00" & initDone(5) & "00" & initDone(2);
+	initFail_add <= "00" & initFail(5) & "00" & initFail(2);
+	selectCR <= GA(0);
+	-- Rearangement due to CR special case
+	din_out(3 downto 0) <= din_l(3 downto 0);
+	din_out(4) <= not(din_l(4));
+	din_out(5) <= din_l(5);
+	din_out(6) <= not(din_l(6));
+	din_out(10 downto 7) <= din_l(11 downto 8);
+    din_out(11) <= not(din_l(12));
+	din_out(12) <= din_l(13);
+	din_out(13) <= not(din_l(14));
+	din_out(14) <= din_l(16) OR din_l(7);
+	din_out(17 downto 15) <= din_l(19 downto 17);
+	din_out(18) <= not(din_l(20));
+	din_out(19) <= din_l(21);
+	din_out(20) <= not(din_l(22));
+	din_out(24 downto 21) <= din_l(27 downto 24);
+	din_out(25) <= not(din_l(28));
+	din_out(26) <= din_l(29);
+	din_out(27) <= not(din_l(30));
+	din_out(31 downto 28) <= din_l(35 downto 32);
+    din_out(32) <= not(din_l(36));
+	din_out(33) <= din_l(37);
+	din_out(34) <= not(din_l(38));
+	din_out(35) <= din_l(40) OR din_l(31);
+	din_out(38 downto 36) <= din_l(43 downto 41);
+	din_out(39) <= not(din_l(44));
+	din_out(40) <= din_l(45);
+	din_out(41) <= not(din_l(46));
+ 
+    din <= din_out;
+	
+	DOUT_REARRANGE: for i in 41 downto 0 generate
+        dout(2 * i + 1 downto 2*i) <= dout1(i) & dout0(i);
+    end generate DOUT_REARRANGE;
+	
+    dout_l(15 downto 0) <= not(dout(29 downto 28)) & not(dout(13 downto 0));
+	dout_l(31 downto 16) <= "00" & not(dout(27 downto 14));
+	dout_l(47 downto 32) <= "00" & not(dout(41 downto 28));
+	dout_l(63 downto 48) <= not(dout(71 downto 70)) & not(dout(55 downto 42));
+	dout_l(79 downto 64) <= "00" & not(dout(69 downto 56));
+	dout_l(95 downto 80) <= "00" & not(dout(83 downto 70));
+	
+	reb_on_l(0) <= rebOnOff(0);
+	reb_on_l(1) <= rebOnOff(1);
+	reb_on_l(2) <= rebOnOff(2) OR rebOnOff_add(0);
+	reb_on_l(3) <= rebOnOff(3);
+	reb_on_l(4) <= rebOnOff(4);
+	reb_on_l(5) <= rebOnOff(5) OR rebOnOff_add(3);
+	reb_on <= reb_on_l;
+	
+    led(2)  <= (heartBeat and not(axilRst)) OR 
+	           (initDone(5) and initDone(4) and initDone(3) and initDone(2)
+			   and initDone(1) and initDone(0));
     led(1)  <= ethLinkUp and not(axilRst); --
-    led(0)  <= (axilRst);
+    led(0)  <= (axilRst) OR ((powerFailure(0) OR powerFailure(1) OR powerFailure(2) OR
+	            powerFailure(3) OR powerFailure(4) OR powerFailure(5)) and heartBeat);
 
    Heartbeat_Inst : entity work.Heartbeat
       generic map(
@@ -316,7 +425,7 @@ begin
             USCL_ADC: IOBUF port map ( I => psI2cOut(i).scl, O  => psI2cIn(i).scl,  T => psI2cOut(i).scloen, IO => SCL_ADC(i));
           end generate PS_i2c_intf;
 
-          RegFileIn.GA <= (Others => '0');
+          RegFileIn.GA <= '0' & GA;
           RegFileIn.dout0 <= dout0;
           RegFileIn.dout1 <= dout1;
           RegFileIn.REB_config_done <= (Others => '1');  -- Unused for now , need for case if measuring IC need addtional configuration befere normal sequencing
@@ -325,9 +434,9 @@ begin
           RegFileIn.temp_Alarm <= temp_Alarm;
           RegFileIn.fp_los <= fp_los;
 
-          din <= RegFileOut.din;
+          --din <= RegFileOut.din;
           sync_DCDC <= RegFileOut.sync_DCDC;
-          reb_on <= RegFileOut.reb_on;
+          --reb_on <= RegFileOut.reb_on;
 
           UtestIO: for i in 7 downto 0 generate
             UTEST: IOBUF port map ( I => RegFileOut.TestOut(i), O  => RegFileIn.TestIn(i),  T => RegFileOut.TestOutOE(i), IO => test_IO(i));
