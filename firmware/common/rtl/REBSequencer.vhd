@@ -51,9 +51,13 @@ entity REBSequencer is
       initFail_add : in  sl;
 	  initDone     : in  sl;
       initFail     : in  sl;
+	  initDone_temp : in  sl;
+      initFail_temp : in  sl;
 	  selectCR     : in sl;
+	  unlockPsOn   : in sl;
       din          : out slv(7 downto 0);  -- Tere are no -1 due to special case for heaters under CR
       dout         : in  slv(15 downto 0);  -- same due to CR heater
+	  temp_Alarm   : in sl;
 	  Status       : out slv(31 downto 0);  -- 
       powerFailure : out sl);
 
@@ -124,6 +128,8 @@ architecture rtl of REBSequencer is
       masterState      => WAIT_START_S);
 
    signal alarmSynced : slv(15 downto 0);
+   signal alarmIn     : slv(15 downto 0);
+   signal initFailS   : sl;
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
@@ -135,6 +141,8 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Main process
    -------------------------------------------------------------------------------------------------
+   alarmIn <= NOT(temp_Alarm) & dout(15 downto 14) & dout(12 downto 0);
+   initFailS <= initFail_add OR initFail;
    SynchronizerVector_0 : entity work.SynchronizerVector
       generic map (
          TPD_G                => TPD_G,
@@ -142,11 +150,11 @@ begin
       port map (
          clk          => axiClk,
          rst          => axiRst,
-		 dataIn        => dout,
+		 dataIn        => alarmIn, --dout,
          dataOut  => alarmSynced);
    
  
-   comb : process (axiRst, rebOn, hvOn, initDone, initFail, initDone_add, initFail_add, alarmSynced, selectCR, dout,  r ) is
+   comb : process (axiRst, rebOn, hvOn, initDone, initDone_temp, initFail_temp, initFail, initDone_add, initFailS, alarmSynced, selectCR, unlockPsOn, dout,  r ) is
       variable v           : RegType;
       
    begin
@@ -156,12 +164,12 @@ begin
 	  
 	  if (selectCR = '1') and (REB_number = x"0" OR REB_number =x"3") then 
 			     v.rebOnOff_add                      := r.rebOnOff;
-				 v.initDone                          := initDone and initDone_add;
-				 v.powerFault                     := initFail_add & initFail & alarmSynced(15 downto 14) & '0' & alarmSynced(12 downto 0);
+				 v.initDone                          := initDone and initDone_add and initDone_temp;
+				 v.powerFault                     := initFail_temp & initFailS & alarmSynced(15 downto 0);
 	  else
 	             v.rebOnOff_add                      := '0';
-				 v.initDone                          := initDone;
-				 v.powerFault                     := '0' & initFail & "000" & alarmSynced(12 downto 0);
+				 v.initDone                          := initDone and initDone_temp;
+				 v.powerFault                     := initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 0);
 
 	  end if;
 	  
@@ -175,7 +183,7 @@ begin
       case r.masterState is
          when WAIT_START_S =>
 		    v.stV := "00000";
-		    v.rebOnOff                      := r.rebOn_d;  --temp to be able to turn of PS
+		   -- v.rebOnOff                      := r.rebOn_d;  --temp to be able to turn of PS
             if (r.rebOn = '1' and r.rebOn_d = '0') then
                v.powerFailure       := '0';
 			   v.configDone           := '0';
@@ -464,7 +472,7 @@ begin
 		    v.stV := "10010";
             if (r.cnt = (Delay_period/2))  then
 			   v.cnt                           := 0;
---			   v.rebOnOff                      := '0'; --
+			   v.rebOnOff                      := (unlockPsOn); --'0'; --
                v.masterState                   := TURN_OFF_S;    
 			else
 			   v.cnt := r.cnt + 1;
@@ -474,7 +482,7 @@ begin
 		    v.stV := "10011";
             if (r.cnt = (Delay_period/2))  then
 			   v.cnt                           := 0;
---			   v.rebOnOff                      := '0'; --
+			   v.rebOnOff                      := (unlockPsOn); --
                v.masterState                   := WAIT_START_S;    
 			else
 			   v.cnt := r.cnt + 1;

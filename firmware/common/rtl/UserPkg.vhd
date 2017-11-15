@@ -246,6 +246,9 @@ type RegFileOutType is record
          TestOut         : slv(7 downto 0);
          TestOutOE       : slv(7 downto 0);
          LED_on          : slv(2 downto 0);
+		 unlockSeting    : slv(2 downto 0);
+		 Tempfail        : sl;
+	     TempInitDone    : sl;
          tempI2cOut      : i2c_out_type;
          fp_I2cOut       : i2c_out_type;
 --         serIDout        : sl;
@@ -263,6 +266,9 @@ type RegFileOutType is record
      TestOut    => (Others => '0'),
      TestOutOE  => (Others => '0'),
      LED_on     => (Others => '0'),
+	 unlockSeting  => (Others => '0'),
+	 Tempfail       => '0',
+	 TempInitDone   => '0',
      tempI2cOut => ('0','0','0','0','0'),
      fp_I2cOut  => ('0','0','0','0','0'),
      fpgaReload => '0',

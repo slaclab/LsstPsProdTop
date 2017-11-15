@@ -24,6 +24,7 @@ use work.AxiStreamPkg.all;
 use work.I2cPkg.all;
 use work.SsiPkg.all;
 use work.UserPkg.all;
+use work.ThresholdPkg.all;
 
 entity PSi2cIoCore is
 
@@ -39,6 +40,7 @@ entity PSi2cIoCore is
 
       REB_on : in sl;
 	  selectCR : in sl := '0';
+	  unlockFilt : in sl := '1';
 --      Aq_period : slv(31 downto 0) := X"09502F90";
       -- Slave interface
       axiReadMaster  : in  AxiLiteReadMasterType;
@@ -105,6 +107,15 @@ architecture rtl of PSi2cIoCore is
          addrBits             => 14,
          connectivity         => X"0001"));
 
+	constant PS_FULL_ADDR_FILT_ARRAY_C : PsWrFiltAddrArray(NUM_MAX_PS_C-1 downto 0) := (
+                           6 => (0 => (AXI_MASTERS_CONFIG_C(0).baseAddr + PsWrFiltAddrArray(0)(0))),
+                           5 => (0 => (AXI_MASTERS_CONFIG_C(1).baseAddr + PsWrFiltAddrArray(1)(0))),
+	                       4 => (0 => (AXI_MASTERS_CONFIG_C(2).baseAddr + PsWrFiltAddrArray(2)(0))), -- unused address
+						   3 => (0 => (AXI_MASTERS_CONFIG_C(3).baseAddr + PsWrFiltAddrArray(3)(0))), -- unused address
+						   2 => (0 => (AXI_MASTERS_CONFIG_C(4).baseAddr + PsWrFiltAddrArray(4)(0))), -- unused address
+						   1 => (0 => (AXI_MASTERS_CONFIG_C(5).baseAddr + PsWrFiltAddrArray(5)(0))), -- unused address
+						   0 => (0 => (AXI_MASTERS_CONFIG_C(6).baseAddr + PsWrFiltAddrArray(6)(0))));
+						   
    signal mAxiWriteMasters : AxiLiteWriteMasterArray(7 downto 0);
    signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(7 downto 0);
    signal mAxiReadMasters  : AxiLiteReadMasterArray(7 downto 0);
@@ -113,8 +124,13 @@ architecture rtl of PSi2cIoCore is
    signal mAxiWSeqSlaves  : AxiLiteWriteSlaveArray(6 downto 0);
    signal mAxiRSeqMasters  : AxiLiteReadMasterArray(6 downto 0);
    signal mAxiRSeqSlaves   : AxiLiteReadSlaveArray(6 downto 0);
-   signal mAxilWriteMasters  : AxiLiteWriteMasterArray(6 downto 0);
-   signal mAxilWriteSlaves   : AxiLiteWriteSlaveArray(6 downto 0);  
+   signal fAxiWriteMasters : AxiLiteWriteMasterArray(7 downto 0);
+   signal fAxiWriteSlaves  : AxiLiteWriteSlaveArray(7 downto 0);
+   signal fAxiReadMasters  : AxiLiteReadMasterArray(7 downto 0);
+   signal fAxiReadSlaves   : AxiLiteReadSlaveArray(7 downto 0);
+   
+--   signal mAxilWriteMasters  : AxiLiteWriteMasterArray(6 downto 0);
+--   signal mAxilWriteSlaves   : AxiLiteWriteSlaveArray(6 downto 0);  
 
 
    -------------------------------------------------------------------------------------------------
@@ -210,7 +226,7 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Crossbar connecting all internal components
    -------------------------------------------------------------------------------------------------
-   HybridAxiCrossbar : entity work.AxiLiteCrossbar
+   PsAxiCrossbar : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -223,14 +239,27 @@ begin
          sAxiWriteSlaves(0)  => axiWriteSlave,
          sAxiReadMasters(0)  => axiReadMaster,
          sAxiReadSlaves(0)   => axiReadSlave,
-         mAxiWriteMasters    => mAxiWriteMasters,
-         mAxiWriteSlaves     => mAxiWriteSlaves,
+         mAxiWriteMasters    => fAxiWriteMasters,
+         mAxiWriteSlaves     => fAxiWriteSlaves,
          mAxiReadMasters     => mAxiReadMasters,
          mAxiReadSlaves      => mAxiReadSlaves);
 
-
-
-
+  PS_filt_intf: for i in  6 downto 0 generate
+   PsAxiBusFilt : entity work.AxiLiteWriteFilter
+      generic map (
+         TPD_G              => TPD_G,
+         SIZE_G             => 1,
+         ADDR_G             => PS_ADDR_FILT_ARRAY_C(i),
+         AXI_ERROR_RESP_G    => AXI_RESP_DECERR_C)
+      port map (
+         axilClk             => axiClk,
+         axilRst             => axiRst,
+		 enFilter            => unlockFilt,
+         sAxilWriteMaster    => fAxiWriteMasters(i),
+         sAxilWriteSlave     => fAxiWriteSlaves(i),
+         mAxilWriteMaster    => mAxiWriteMasters(i),
+         mAxilWriteSlave     => mAxiWriteSlaves(i));
+    end generate PS_filt_intf;
 
    ----------------------------------------------------------------------------------------------
    -- I2C Interface to hybrid is shared between 2 AXI Slaves

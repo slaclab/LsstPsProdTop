@@ -315,7 +315,9 @@ begin
                axiClk         => axilClk,
                axiRst         => axilRst,
 			   REB_on         => reb_on_l(i), --RegFileOut.reb_on(i),  -- 
-			--   selectCR        => selectCR,
+			   selectCR        => selectCR,
+			   unlockFilt      => RegFileOut.unlockSeting(0),
+			   
                axiReadMaster  => axilReadMasters(PS_AXI_INDEX_ARRAY_C(i)),
                axiReadSlave   => axilReadSlaves(PS_AXI_INDEX_ARRAY_C(i)),
                axiWriteMaster => axilWriteMasters(PS_AXI_INDEX_ARRAY_C(i)),
@@ -344,9 +346,13 @@ begin
 			   initFail_add   => initFail_add(i),
 			   initDone       => initDone(i),
 			   initFail       => initFail(i),
+			   initDone_temp  => RegFileOut.TempInitDone,
+               initFail_temp  => RegFileOut.Tempfail,
 			   selectCR       => selectCR,
+			   unlockPsOn     => RegFileOut.unlockSeting(1),
                din            => din_l(i*8 +7 downto i*8),
 			   dout           => dout_l(i*16 +15 downto i*16),
+			   temp_Alarm     => temp_Alarm,
                Status         => StatusSeq(i),
                powerFailure   => powerFailure(i)
 			   );			   

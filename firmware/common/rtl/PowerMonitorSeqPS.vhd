@@ -33,6 +33,7 @@ entity PowerMonitorSeqPS is
       TPD_G                : time                   := 1 ns;
       SIMULATION_G         : boolean                := false;
 	  PS_REG_READ_LENGTH_C : positive := 1;
+	  PS_NUMB              : integer := 0;
 	  REB_number           : slv(3 downto 0)        := "0000";
 	  FAIL_CNT_C           : integer := 3
 	  );
@@ -137,50 +138,50 @@ begin
 	  v.Ps_On := SeqCntlIn.Ps_On;
 	  
 	  if (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") then
-		v.ps_addresses(NUM_CR_ADD_PS_C-1 downto 0) := ps_cr_add_addresses(NUM_CR_ADD_PS_C-1 downto 0);
-		v.ps_data(NUM_CR_ADD_PS_C-1 downto 0) := ps_cr_add_data(NUM_CR_ADD_PS_C-1 downto 0);
+		v.ps_addresses(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_add_addresses(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
+		v.ps_data(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_add_data(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
 
-        for i in (NUM_CR_ADD_PS_C-1) downto 0 loop
+        for i in (CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
          -- Check for changes in the bus
             if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
             -- Set the flag
                 v.valid(i) := '1';
             end if;
          end loop;
-		if(PS_REG_READ_LENGTH_C > NUM_CR_ADD_PS_C ) then
-            for i in (PS_REG_READ_LENGTH_C-1) downto NUM_CR_ADD_PS_C loop
+		if(PS_REG_READ_LENGTH_C > CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB) ) then
+            for i in (PS_REG_READ_LENGTH_C-1) downto CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB) loop
                 v.valid(i) := '1';
             end loop;
 		end if;
       elsif (selectCR = '1') then
-		v.ps_addresses(NUM_CR_PS_C-1 downto 0) := ps_cr_addresses(NUM_CR_PS_C-1 downto 0);
-	    v.ps_data(NUM_CR_PS_C-1 downto 0) := ps_cr_data(NUM_CR_PS_C-1 downto 0);
+		v.ps_addresses(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_addresses(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
+	    v.ps_data(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_data(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
 		
-        for i in (NUM_CR_PS_C-1) downto 0 loop
+        for i in (CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
          -- Check for changes in the bus
             if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
             -- Set the flag
                 v.valid(i) := '1';
             end if;
          end loop;
-		if(PS_REG_READ_LENGTH_C > NUM_CR_PS_C )  then
-            for i in (PS_REG_READ_LENGTH_C-1) downto NUM_CR_PS_C loop
+		if(PS_REG_READ_LENGTH_C > CR_PS_ENTRY_ARRAY_C(PS_NUMB) )  then
+            for i in (PS_REG_READ_LENGTH_C-1) downto CR_PS_ENTRY_ARRAY_C(PS_NUMB) loop
                 v.valid(i) := '1';
             end loop;
 		end if;
       else
-	    v.ps_addresses(NUM_SR_PS_C-1 downto 0) := ps_sr_addresses(NUM_SR_PS_C-1 downto 0);   
-        v.ps_data(NUM_SR_PS_C-1 downto 0) := ps_sr_data(NUM_SR_PS_C-1 downto 0);
+	    v.ps_addresses(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_sr_addresses(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);   
+        v.ps_data(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_sr_data(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
 			   
-        for i in (NUM_SR_PS_C-1) downto 0 loop
+        for i in (SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
          -- Check for changes in the bus
             if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
             -- Set the flag
                 v.valid(i) := '1';
             end if;
          end loop;
-		if(PS_REG_READ_LENGTH_C > NUM_SR_PS_C ) then
-            for i in (PS_REG_READ_LENGTH_C-1) downto NUM_SR_PS_C loop
+		if(PS_REG_READ_LENGTH_C > SR_PS_ENTRY_ARRAY_C(PS_NUMB) ) then
+            for i in (PS_REG_READ_LENGTH_C-1) downto SR_PS_ENTRY_ARRAY_C(PS_NUMB) loop
                 v.valid(i) := '1';
             end loop;
 		end if;
@@ -214,13 +215,13 @@ begin
             -- Increment the counter
             if (SeqCntlIn.Ps_On = '0') then
 			   v.state        := IDLE_S;
-			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") and (r.cnt = (NUM_CR_ADD_PS_C)) then
+			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") and (r.cnt = (CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB))) then
                 v.cnt := 0;
 			    v.state        := R_START_S;
-			elsif (selectCR = '1') and (r.cnt = (NUM_CR_PS_C)) then
+			elsif (selectCR = '1') and (r.cnt = (CR_PS_ENTRY_ARRAY_C(PS_NUMB))) then
                 v.cnt := 0;
 			    v.state        := R_START_S;
-			elsif (selectCR = '0') and (r.cnt = (NUM_SR_PS_C)) then
+			elsif (selectCR = '0') and (r.cnt = (SR_PS_ENTRY_ARRAY_C(PS_NUMB))) then
                 v.cnt := 0;
 			    v.state        := R_START_S;
             elsif(ack.done = '0') then
@@ -254,13 +255,13 @@ begin
             -- Increment the counter
             if (SeqCntlIn.Ps_On = '0') then
 			   v.state        := IDLE_S;
-			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") and (r.cnt = (NUM_CR_ADD_PS_C)) then
+			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") and (r.cnt = (CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB))) then
                 v.cnt := 0;
 			    v.state        := F_START_S;
-			elsif (selectCR = '1') and (r.cnt = (NUM_CR_PS_C)) then
+			elsif (selectCR = '1') and (r.cnt = (CR_PS_ENTRY_ARRAY_C(PS_NUMB))) then
                 v.cnt := 0;
 			    v.state        := F_START_S;
-			elsif (selectCR = '0') and (r.cnt = (NUM_SR_PS_C)) then
+			elsif (selectCR = '0') and (r.cnt = (SR_PS_ENTRY_ARRAY_C(PS_NUMB))) then
                 v.cnt := 0;
 			    v.state        := F_START_S;				
             elsif(ack.done = '0') then

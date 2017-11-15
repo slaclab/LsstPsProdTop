@@ -22,6 +22,22 @@ use work.AxiLitePkg.all;
 
 package ThresholdPkg is
 
+
+   constant UNLOCK_FILTERING  : slv(31 downto 0) := x"00_00_00_01";
+   constant UNLOCK_PS_STAY_ON : slv(31 downto 0) := x"00_00_00_00";
+   constant UNLOCK_MANUAL_PS_ON : slv(31 downto 0) := x"00_00_00_01";
+   
+   constant TEMP_ENTRY_C      : natural := 3;
+   constant TEMP_SET_C : Slv20Array(0 to TEMP_ENTRY_C-1) := (
+                           (x"5_60_00"),
+                           (x"E_37_00"),
+	                       (x"F_3C_00"));
+
+   constant TEMP_GET_C : Slv20Array(0 to TEMP_ENTRY_C-1) := (
+                           (x"1_00_00"),
+                           (x"A_00_00"),
+	                       (x"B_00_00"));						   
+
    -- LTC 2945 entry record
    type Ltc2945Entry is record
       Address           : slv(31 downto 0);
@@ -50,27 +66,32 @@ package ThresholdPkg is
 --   constant PS_CONFIG_DATA_C      : Slv32VectorArray((NUM_MAX_PS_C do wnto 0)(MAX_ENTRY_C downto 0)) := (Others => (Others => (Others => '0')));
    
    type PsEntryArray is array (natural range<>) of natural;
-   constant SR_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_SR_PS_C-1) := (
+   constant SR_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_MAX_PS_C-1) := (
              DIGITAL_ENTRY_C,
              ANALOG_ENTRY_C,
              OD_ENTRY_C,
              CLK_HIGH_ENTRY_C,
              CLK_LOW_ENTRY_C,
 			 HEATER_ENTRY_C,
-             BIAS_ENTRY_C);
+             BIAS_ENTRY_C+1);
 
-   constant CR_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_CR_PS_C-1) := (
+   constant CR_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_MAX_PS_C-1) := (
              DIGITAL_ENTRY_C,
              ANALOG_ENTRY_C,
              OD_ENTRY_C,
              CLK_HIGH_ENTRY_C,
              CLK_LOW_ENTRY_C,
-			 DPHI_ENTRY_C,
-             BIAS_ENTRY_C);
+			 DPHI_ENTRY_C+1,
+             BIAS_ENTRY_C+1);
 			 
-   constant CR_ADD_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_CR_ADD_PS_C-1) := (
+   constant CR_ADD_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_MAX_PS_C-1) := (
              HEATER_ENTRY_C,
-             HEATER_ENTRY_C);
+             HEATER_ENTRY_C,
+			 0,
+			 0,
+			 0,
+			 0,
+			 0);
 			 
 -- SR START   
 
@@ -130,14 +151,14 @@ package ThresholdPkg is
                            (x"00_00_00_01", x"00_00_00_2F"),
                            (x"00_00_00_1A", x"00_00_00_A8"),
 	                       (x"00_00_00_1B", x"00_00_00_00"),
-                           (x"00_00_00_2E", x"00_00_00_0C"),
-	                       (x"00_00_00_2F", x"00_00_00_40"),
+                           (x"00_00_00_2E", x"00_00_00_1E"),
+	                       (x"00_00_00_2F", x"00_00_00_A0"),
 	                       (x"00_00_00_30", x"00_00_00_03"),
 	                       (x"00_00_00_31", x"00_00_00_00"),
-						   (x"00_00_00_24", x"00_00_00_28"),
-	                       (x"00_00_00_25", x"00_00_00_40"),
-	                       (x"00_00_00_26", x"00_00_00_1D"),
-	                       (x"00_00_00_27", x"00_00_00_C0"));
+						   (x"00_00_00_24", x"00_00_00_2B"),
+	                       (x"00_00_00_25", x"00_00_00_20"),
+	                       (x"00_00_00_26", x"00_00_00_1C"),
+	                       (x"00_00_00_27", x"00_00_00_B0"));
 						   
    constant SR_HEATER_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
                            (x"00_00_00_01", x"00_00_00_23"),
@@ -156,13 +177,13 @@ package ThresholdPkg is
                            (x"00_00_00_01", x"00_00_00_28"),
                            (x"00_00_00_1A", x"00_00_00_D7"),
 	                       (x"00_00_00_1B", x"00_00_00_A0"),
-                           (x"00_00_00_2E", x"00_00_00_FF"),
+                           (x"00_00_00_24", x"00_00_00_C9"),
+	                       (x"00_00_00_25", x"00_00_00_40"),
+						   (x"00_00_01_26", x"00_00_00_30"),  -- set reference DAC
+                           (x"00_00_00_2E", x"00_00_00_FF"),  -- redundant to keep same size of arrays
 	                       (x"00_00_00_2F", x"00_00_00_F0"),
 	                       (x"00_00_00_30", x"00_00_00_FF"),
 	                       (x"00_00_00_31", x"00_00_00_F0"),
-                           (x"00_00_00_24", x"00_00_00_C9"),
-	                       (x"00_00_00_25", x"00_00_00_40"),
-						   (x"00_00_00_26", x"00_00_00_00"),   -- redundant to keep same size of arrays
 	                       (x"00_00_00_27", x"00_00_00_00"));
    
   
@@ -237,14 +258,14 @@ package ThresholdPkg is
                            (x"00_00_00_01", x"00_00_00_2F"),
                            (x"00_00_00_1A", x"00_00_00_8C"),
 	                       (x"00_00_00_1B", x"00_00_00_00"),
-                           (x"00_00_00_2E", x"00_00_00_0C"),
-	                       (x"00_00_00_2F", x"00_00_00_40"),
+                           (x"00_00_00_2E", x"00_00_00_14"),
+	                       (x"00_00_00_2F", x"00_00_00_70"),
 	                       (x"00_00_00_30", x"00_00_00_03"),
 	                       (x"00_00_00_31", x"00_00_00_00"),
-						   (x"00_00_00_24", x"00_00_00_24"),
-	                       (x"00_00_00_25", x"00_00_00_40"),
+						   (x"00_00_00_24", x"00_00_00_25"),
+	                       (x"00_00_00_25", x"00_00_00_60"),
 	                       (x"00_00_00_26", x"00_00_00_1A"),
-						   (x"00_00_00_27", x"00_00_00_C0"));
+						   (x"00_00_00_27", x"00_00_00_00"));
 
    constant CR_DPHI_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
                            (x"00_00_00_01", x"00_00_00_23"),
@@ -254,22 +275,22 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_40"),
 	                       (x"00_00_00_30", x"00_00_00_28"),
 	                       (x"00_00_00_31", x"00_00_00_80"),
+						   (x"00_00_02_25", x"00_00_00_30"),  -- set reference DAC
                            (x"00_00_00_2E", x"00_00_00_7F"),   -- redundant to keep same size of arrays
 	                       (x"00_00_00_2F", x"00_00_00_40"),
-	                       (x"00_00_00_30", x"00_00_00_28"),
 	                       (x"00_00_00_31", x"00_00_00_80"));
   
    constant CR_BIAS_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
                            (x"00_00_00_01", x"00_00_00_28"),
                            (x"00_00_00_1A", x"00_00_00_D7"),
 	                       (x"00_00_00_1B", x"00_00_00_A0"),
-                           (x"00_00_00_2E", x"00_00_00_FF"),
-	                       (x"00_00_00_2F", x"00_00_00_F0"),
-	                       (x"00_00_00_30", x"00_00_00_00"),
-	                       (x"00_00_00_31", x"00_00_00_00"),
                            (x"00_00_00_24", x"00_00_00_C9"),
 	                       (x"00_00_00_25", x"00_00_00_40"),
-						   (x"00_00_00_26", x"00_00_00_00"),   -- redundant to keep same size of arrays
+						   (x"00_00_01_26", x"00_00_00_30"),  -- set reference DAC
+                           (x"00_00_00_2E", x"00_00_00_FF"),  -- redundant to keep same size of arrays
+	                       (x"00_00_00_2F", x"00_00_00_F0"),
+	                       (x"00_00_00_30", x"00_00_00_FF"),
+	                       (x"00_00_00_31", x"00_00_00_F0"),
 	                       (x"00_00_00_27", x"00_00_00_00"));
 
 			 
@@ -322,6 +343,28 @@ package ThresholdPkg is
 	   stV                   => (Others => '0')
       );
 	type SeqCntlOutTypeArray is array (natural range <>) of SeqCntlOutType;  
+	
+-- Filtering input data writes
+   constant NUMB_WORD2FILT_C : PositiveArray(NUM_MAX_PS_C-1 downto 0) := (
+                           6 => 1,
+                           5 => 1,
+	                       4 => 1,
+						   3 => 1,
+						   2 => 1,
+						   1 => 1,
+						   0 => 1);
+						   
+   type PsWrFiltAddrArray is array (natural range<>) of Slv32Array(0 downto 0);						   
+						   
+   constant PS_ADDR_FILT_ARRAY_C : PsWrFiltAddrArray(NUM_MAX_PS_C-1 downto 0) := (
+                           6 => (Others => x"000001A0"),
+                           5 => (Others => x"000002A0"),
+	                       4 => (Others => x"00000300"), -- unused address
+						   3 => (Others => x"00000300"), -- unused address
+						   2 => (Others => x"00000300"), -- unused address
+						   1 => (Others => x"00000300"), -- unused address
+						   0 => (Others => x"00000300")); -- unused address
+						   			   
 
 end ThresholdPkg;
 
