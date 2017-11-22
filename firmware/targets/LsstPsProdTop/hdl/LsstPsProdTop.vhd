@@ -459,34 +459,34 @@ begin
          ------------------------
          -- AXI-Lite: XADC Module
          ------------------------
-         -- U_Xadc : entity work.AxiXadcWrapper
-           -- generic map (
-             -- TPD_G            => TPD_G,
-             -- AXI_ERROR_RESP_G => AXI_ERROR_RESP_G)
-           -- port map (
-             -- axiReadMaster  => axilReadMasters(XADC_INDEX_C),
-             -- axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
-             -- axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
-             -- axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C),
-             -- axiClk         => axilClk,
-             -- axiRst         => axilRst,
-             -- vPIn           => vPIn,
-             -- vNIn           => vNIn);
+         U_Xadc : entity work.AxiXadcWrapper
+           generic map (
+             TPD_G            => TPD_G,
+             AXI_ERROR_RESP_G => AXI_ERROR_RESP_G)
+           port map (
+             axiReadMaster  => axilReadMasters(XADC_INDEX_C),
+             axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
+             axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
+             axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C),
+             axiClk         => axilClk,
+             axiRst         => axilRst,
+             vPIn           => vPIn,
+             vNIn           => vNIn);
 
 			 
 			    ------------------------------------------------------------------------------
    -- Unused AXI-Lite buses must be terminated to prevent hanging the bus forever
    ------------------------------------------------------------------------------
-   U_Xadc : entity work.AxiLiteEmpty
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         axiClk         => axilClk,
-         axiClkRst      => axilRst,
-         axiReadMaster  => axilReadMasters(XADC_INDEX_C),
-         axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
-         axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
-         axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C));   
+   -- U_Xadc : entity work.AxiLiteEmpty
+      -- generic map (
+         -- TPD_G => TPD_G)
+      -- port map (
+         -- axiClk         => axilClk,
+         -- axiClkRst      => axilRst,
+         -- axiReadMaster  => axilReadMasters(XADC_INDEX_C),
+         -- axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
+         -- axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
+         -- axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C));   
 		 
 		 
          ----------------------

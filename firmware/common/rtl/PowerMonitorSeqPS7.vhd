@@ -32,9 +32,11 @@ entity PowerMonitorSeqPS7 is
    generic (
       TPD_G           : time                   := 1 ns;
       SIMULATION_G    : boolean                := false;
-	  Aq_period       : integer                := 125000000;  -- 1 second to see if stability in PS help with communication
+	  Aq_period       : integer                := 250000000;  -- 2 second to see if stability in PS help with communication
       AXI_ERROR_RESP_G : slv(1 downto 0)       := AXI_RESP_SLVERR_C;
       REB_number      : slv(3 downto 0)        := "0000";
+	  FILT_ADDR0      : slv(31 downto 0)        := x"00000000";
+	  FILT_ADDR1      : slv(31 downto 0)        := x"00000000";
 	  FAIL_CNT_C           : integer := 3);
 
    port (
@@ -162,7 +164,8 @@ begin
 		    axiSlaveRegisterR(regCon, x"034", 0, SeqCntlOuts(5).stV(63 downto 32));
 		    axiSlaveRegisterR(regCon, x"038", 0, SeqCntlOuts(6).stV(31 downto 0)); -- & SeqCntlOuts(i).initDone);
 		    axiSlaveRegisterR(regCon, x"03C", 0, SeqCntlOuts(6).stV(63 downto 32));
-
+			axiSlaveRegisterR(regCon, x"040", 0, FILT_ADDR0);
+			axiSlaveRegisterR(regCon, x"044", 0, FILT_ADDR1);
 
       -- Closeout the transaction
       axiSlaveDefault(regCon,v.sAxiWriteSlave, v.sAxiReadSlave, AXI_ERROR_RESP_G);
@@ -209,10 +212,10 @@ begin
                v.cnt := 0;
 			   v.fail := '1';
 			   v.state        := DONE_S;
---			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5")
---			       and (r.initDoneS(NUM_CR_ADD_PS_C -1 downto 0) = ONEVECT(NUM_CR_ADD_PS_C-1 downto 0)) then
---			   v.InitDone     := '1';
---			   v.state        := DONE_S;
+			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5")
+			       and (r.initDoneS(NUM_CR_ADD_PS_C -1 downto 0) = ONEVECT(NUM_CR_ADD_PS_C-1 downto 0)) then
+			   v.InitDone     := '1';
+			   v.state        := DONE_S;
             elsif (r.initDoneS(NUM_MAX_PS_C -1 downto 0) = ONEVECT(NUM_MAX_PS_C-1 downto 0)) then
 			   v.InitDone     := '1';
 			   v.state        := DONE_S;

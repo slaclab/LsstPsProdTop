@@ -165,11 +165,11 @@ begin
 	  if (selectCR = '1') and (REB_number = x"0" OR REB_number =x"3") then 
 			     v.rebOnOff_add                      := r.rebOnOff;
 				 v.initDone                          := initDone and initDone_add and initDone_temp;
-				 v.powerFault                     := initFail_temp & initFailS & alarmSynced(15 downto 0);
+				 v.powerFault                     := initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0);  -- Zeros to exclude unused checks
 	  else
 	             v.rebOnOff_add                      := '0';
 				 v.initDone                          := initDone and initDone_temp;
-				 v.powerFault                     := initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 0);
+				 v.powerFault                     := initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0);
 
 	  end if;
 	  
@@ -183,7 +183,7 @@ begin
       case r.masterState is
          when WAIT_START_S =>
 		    v.stV := "00000";
-		   -- v.rebOnOff                      := r.rebOn_d;  --temp to be able to turn of PS
+		    v.rebOnOff                      := r.rebOn_d and (unlockPsOn);  --temp to be able to turn of PS
             if (r.rebOn = '1' and r.rebOn_d = '0') then
                v.powerFailure       := '0';
 			   v.configDone           := '0';

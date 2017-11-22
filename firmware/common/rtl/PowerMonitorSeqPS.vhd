@@ -141,49 +141,77 @@ begin
 		v.ps_addresses(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_add_addresses(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
 		v.ps_data(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_add_data(CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
 
-        for i in (CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
+        for i in (CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-2) downto 0 loop
          -- Check for changes in the bus
             if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
             -- Set the flag
                 v.valid(i) := '1';
             end if;
          end loop;
-		if(PS_REG_READ_LENGTH_C > CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB) ) then
-            for i in (PS_REG_READ_LENGTH_C-1) downto CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB) loop
+		if(PS_REG_READ_LENGTH_C > CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB) - 1 ) then
+            for i in (PS_REG_READ_LENGTH_C-1) downto CR_ADD_PS_ENTRY_ARRAY_C(PS_NUMB)-1 loop
                 v.valid(i) := '1';
             end loop;
 		end if;
       elsif (selectCR = '1') then
 		v.ps_addresses(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_addresses(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
 	    v.ps_data(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_cr_data(CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
-		
-        for i in (CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
-         -- Check for changes in the bus
-            if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
-            -- Set the flag
-                v.valid(i) := '1';
-            end if;
-         end loop;
-		if(PS_REG_READ_LENGTH_C > CR_PS_ENTRY_ARRAY_C(PS_NUMB) )  then
-            for i in (PS_REG_READ_LENGTH_C-1) downto CR_PS_ENTRY_ARRAY_C(PS_NUMB) loop
-                v.valid(i) := '1';
-            end loop;
+        if ((PS_NUMB = 2) OR (PS_NUMB = 4) OR (PS_NUMB = 6)) then		
+			for i in (CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
+			 -- Check for changes in the bus
+				if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
+				-- Set the flag
+					v.valid(i) := '1';
+				end if;
+			 end loop;
+			if(PS_REG_READ_LENGTH_C > CR_PS_ENTRY_ARRAY_C(PS_NUMB) )  then
+				for i in (PS_REG_READ_LENGTH_C-1) downto CR_PS_ENTRY_ARRAY_C(PS_NUMB) loop
+					v.valid(i) := '1';
+				end loop;
+			end if;
+		else
+			for i in (CR_PS_ENTRY_ARRAY_C(PS_NUMB)-2) downto 0 loop
+			 -- Check for changes in the bus
+				if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
+				-- Set the flag
+					v.valid(i) := '1';
+				end if;
+			 end loop;
+			if(PS_REG_READ_LENGTH_C > CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 )  then
+				for i in (PS_REG_READ_LENGTH_C-1) downto CR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 loop
+					v.valid(i) := '1';
+				end loop;
+			end if;	
 		end if;
       else
 	    v.ps_addresses(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_sr_addresses(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);   
         v.ps_data(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0) := ps_sr_data(SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 downto 0);
-			   
-        for i in (SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
-         -- Check for changes in the bus
-            if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
-            -- Set the flag
-                v.valid(i) := '1';
-            end if;
-         end loop;
-		if(PS_REG_READ_LENGTH_C > SR_PS_ENTRY_ARRAY_C(PS_NUMB) ) then
-            for i in (PS_REG_READ_LENGTH_C-1) downto SR_PS_ENTRY_ARRAY_C(PS_NUMB) loop
-                v.valid(i) := '1';
-            end loop;
+        if (PS_NUMB = 2) OR (PS_NUMB = 4) OR (PS_NUMB = 6) then		
+			for i in (SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1) downto 0 loop
+			 -- Check for changes in the bus
+				if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
+				-- Set the flag
+					v.valid(i) := '1';
+				end if;
+			 end loop;
+			if(PS_REG_READ_LENGTH_C > SR_PS_ENTRY_ARRAY_C(PS_NUMB) ) then
+				for i in (PS_REG_READ_LENGTH_C-1) downto SR_PS_ENTRY_ARRAY_C(PS_NUMB) loop
+					v.valid(i) := '1';
+				end loop;
+			end if;
+		else
+			for i in (SR_PS_ENTRY_ARRAY_C(PS_NUMB)-2) downto 0 loop
+			 -- Check for changes in the bus
+				if r.ps_data(i)(7 downto 0) = r.inSlv(i)(7 downto 0) then
+				-- Set the flag
+					v.valid(i) := '1';
+				end if;
+			 end loop;
+			if(PS_REG_READ_LENGTH_C > SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 ) then
+				for i in (PS_REG_READ_LENGTH_C-1) downto SR_PS_ENTRY_ARRAY_C(PS_NUMB)-1 loop
+					v.valid(i) := '1';
+				end loop;
+			end if;
 		end if;
 	  end if;
 
@@ -204,6 +232,7 @@ begin
 --			   v.valid := (Others => '0');
 			   v.initDone := '0';
                v.req.request := '0';
+			   v.status := (others => '0');
 			   v.state        := IDLE_S;
             elsif (SeqCntlIn.Ps_On = '1' and r.Ps_On = '0') then
                -- Next state
@@ -336,6 +365,7 @@ begin
                v.state        := IDLE_S;
             else
                v.f_cnt := r.f_cnt + 1;
+			   v.status := (others => '0');  -- to clear for new try
 			   -- Next state
                v.state        := W_START_S;	  
             end if;

@@ -23,9 +23,9 @@ use work.AxiLitePkg.all;
 package ThresholdPkg is
 
 
-   constant UNLOCK_FILTERING  : slv(31 downto 0) := x"00_00_00_01";
-   constant UNLOCK_PS_STAY_ON : slv(31 downto 0) := x"00_00_00_00";
-   constant UNLOCK_MANUAL_PS_ON : slv(31 downto 0) := x"00_00_00_01";
+   constant UNLOCK_FILTERING  : slv(31 downto 0) := x"DE_AD_BE_EF";
+   constant UNLOCK_PS_STAY_ON : slv(31 downto 0) := x"DE_AD_BE_EF";
+   constant UNLOCK_MANUAL_PS_ON : slv(31 downto 0) := x"DE_AD_BE_EF";
    
    constant TEMP_ENTRY_C      : natural := 3;
    constant TEMP_SET_C : Slv20Array(0 to TEMP_ENTRY_C-1) := (
@@ -67,31 +67,31 @@ package ThresholdPkg is
    
    type PsEntryArray is array (natural range<>) of natural;
    constant SR_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_MAX_PS_C-1) := (
-             DIGITAL_ENTRY_C,
-             ANALOG_ENTRY_C,
+             DIGITAL_ENTRY_C+1,
+             ANALOG_ENTRY_C+1,
              OD_ENTRY_C,
-             CLK_HIGH_ENTRY_C,
+             CLK_HIGH_ENTRY_C+1,
              CLK_LOW_ENTRY_C,
-			 HEATER_ENTRY_C,
-             BIAS_ENTRY_C+1);
+			 HEATER_ENTRY_C+1,
+             BIAS_ENTRY_C+2);
 
    constant CR_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_MAX_PS_C-1) := (
-             DIGITAL_ENTRY_C,
-             ANALOG_ENTRY_C,
+             DIGITAL_ENTRY_C+1,
+             ANALOG_ENTRY_C+1,
              OD_ENTRY_C,
-             CLK_HIGH_ENTRY_C,
+             CLK_HIGH_ENTRY_C+1,
              CLK_LOW_ENTRY_C,
-			 DPHI_ENTRY_C+1,
-             BIAS_ENTRY_C+1);
+			 DPHI_ENTRY_C+3,
+             BIAS_ENTRY_C+2);
 			 
    constant CR_ADD_PS_ENTRY_ARRAY_C : PsEntryArray(0 to NUM_MAX_PS_C-1) := (
-             HEATER_ENTRY_C,
-             HEATER_ENTRY_C,
-			 0,
-			 0,
-			 0,
-			 0,
-			 0);
+             HEATER_ENTRY_C+1,
+             HEATER_ENTRY_C+1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1);
 			 
 -- SR START   
 
@@ -103,8 +103,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_20"),
 	                       (x"00_00_00_30", x"00_00_00_58"),
 	                       (x"00_00_00_31", x"00_00_00_00"),
-                           (x"00_00_00_2E", x"00_00_00_77"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_20"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA
+	                       (x"00_00_00_2F", x"00_00_00_20"), -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_58"),
 	                       (x"00_00_00_31", x"00_00_00_00"));
 	  
@@ -116,8 +116,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_50"),
 	                       (x"00_00_00_30", x"00_00_00_7A"),
 	                       (x"00_00_00_31", x"00_00_00_F0"),
-                           (x"00_00_00_2E", x"00_00_00_A6"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_50"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
+	                       (x"00_00_00_2F", x"00_00_00_50"),  -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_7A"),
 	                       (x"00_00_00_31", x"00_00_00_F0"));
 
@@ -142,8 +142,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_60"),
 	                       (x"00_00_00_30", x"00_00_00_7C"),
 	                       (x"00_00_00_31", x"00_00_00_70"),
-                           (x"00_00_00_2E", x"00_00_00_A8"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_60"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA  
+	                       (x"00_00_00_2F", x"00_00_00_60"), -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_7C"),
 	                       (x"00_00_00_31", x"00_00_00_70"));
 
@@ -168,8 +168,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_40"),
 	                       (x"00_00_00_30", x"00_00_00_5E"),
 	                       (x"00_00_00_31", x"00_00_00_70"),
-                           (x"00_00_00_2E", x"00_00_00_7F"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_40"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
+	                       (x"00_00_00_2F", x"00_00_00_40"),  -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_5E"),
 	                       (x"00_00_00_31", x"00_00_00_70"));
 	  
@@ -180,8 +180,8 @@ package ThresholdPkg is
                            (x"00_00_00_24", x"00_00_00_C9"),
 	                       (x"00_00_00_25", x"00_00_00_40"),
 						   (x"00_00_01_26", x"00_00_00_30"),  -- set reference DAC
-                           (x"00_00_00_2E", x"00_00_00_FF"),  -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_F0"),
+                           (x"00_00_01_a0", x"00_00_00_00"),  
+	                       (x"00_00_00_2F", x"00_00_00_F0"),  -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_FF"),
 	                       (x"00_00_00_31", x"00_00_00_F0"),
 	                       (x"00_00_00_27", x"00_00_00_00"));
@@ -210,8 +210,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_20"),
 	                       (x"00_00_00_30", x"00_00_00_58"),
 	                       (x"00_00_00_31", x"00_00_00_00"),
-                           (x"00_00_00_2E", x"00_00_00_77"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_20"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
+	                       (x"00_00_00_2F", x"00_00_00_20"),  -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_58"),
 	                       (x"00_00_00_31", x"00_00_00_00"));  
 	  
@@ -223,8 +223,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_50"),
 	                       (x"00_00_00_30", x"00_00_00_7A"),
 	                       (x"00_00_00_31", x"00_00_00_F0"),
-                           (x"00_00_00_2E", x"00_00_00_A6"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_50"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
+	                       (x"00_00_00_2F", x"00_00_00_50"),  -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_7A"),
 	                       (x"00_00_00_31", x"00_00_00_F0"));
 
@@ -249,8 +249,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_50"),
 	                       (x"00_00_00_30", x"00_00_00_62"),
 	                       (x"00_00_00_31", x"00_00_00_80"),
-                           (x"00_00_00_2E", x"00_00_00_85"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_50"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
+	                       (x"00_00_00_2F", x"00_00_00_50"),   -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_62"),
 	                       (x"00_00_00_31", x"00_00_00_80"));
 
@@ -275,10 +275,10 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_40"),
 	                       (x"00_00_00_30", x"00_00_00_28"),
 	                       (x"00_00_00_31", x"00_00_00_80"),
-						   (x"00_00_02_25", x"00_00_00_30"),  -- set reference DAC
-                           (x"00_00_00_2E", x"00_00_00_7F"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_40"),
-	                       (x"00_00_00_31", x"00_00_00_80"));
+						   (x"00_00_02_26", x"00_00_00_30"),  -- set reference DAC
+						   (x"00_00_02_a0", x"00_00_80_00"),  -- and zero it (middle scale)
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
+	                       (x"00_00_00_31", x"00_00_00_80")); -- redundant to keep same size of arrays
   
    constant CR_BIAS_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
                            (x"00_00_00_01", x"00_00_00_28"),
@@ -287,8 +287,8 @@ package ThresholdPkg is
                            (x"00_00_00_24", x"00_00_00_C9"),
 	                       (x"00_00_00_25", x"00_00_00_40"),
 						   (x"00_00_01_26", x"00_00_00_30"),  -- set reference DAC
-                           (x"00_00_00_2E", x"00_00_00_FF"),  -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_F0"),
+                           (x"00_00_01_a0", x"00_00_00_00"), 
+	                       (x"00_00_00_2F", x"00_00_00_F0"),  -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_FF"),
 	                       (x"00_00_00_31", x"00_00_00_F0"),
 	                       (x"00_00_00_27", x"00_00_00_00"));
@@ -312,8 +312,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_2F", x"00_00_00_F0"),
 	                       (x"00_00_00_30", x"00_00_00_D9"),
 	                       (x"00_00_00_31", x"00_00_00_40"),
-                           (x"00_00_00_2E", x"00_00_00_FF"),   -- redundant to keep same size of arrays
-	                       (x"00_00_00_2F", x"00_00_00_F0"),
+                           (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
+	                       (x"00_00_00_2F", x"00_00_00_F0"), -- redundant to keep same size of arrays
 	                       (x"00_00_00_30", x"00_00_00_D9"),
 	                       (x"00_00_00_31", x"00_00_00_40"));			 
 
@@ -354,16 +354,18 @@ package ThresholdPkg is
 						   1 => 1,
 						   0 => 1);
 						   
+   constant BLOCK_FILT_C : slv(NUM_MAX_PS_C-1 downto 0) := "0011111";
+
    type PsWrFiltAddrArray is array (natural range<>) of Slv32Array(0 downto 0);						   
 						   
    constant PS_ADDR_FILT_ARRAY_C : PsWrFiltAddrArray(NUM_MAX_PS_C-1 downto 0) := (
-                           6 => (Others => x"000001A0"),
-                           5 => (Others => x"000002A0"),
-	                       4 => (Others => x"00000300"), -- unused address
-						   3 => (Others => x"00000300"), -- unused address
-						   2 => (Others => x"00000300"), -- unused address
-						   1 => (Others => x"00000300"), -- unused address
-						   0 => (Others => x"00000300")); -- unused address
+                           6 => (Others => x"00000680"),
+                           5 => (Others => x"00000A80"),
+	                       4 => (Others => x"00000C00"), -- unused address
+						   3 => (Others => x"00000C00"), -- unused address
+						   2 => (Others => x"00000C00"), -- unused address
+						   1 => (Others => x"00000C00"), -- unused address
+						   0 => (Others => x"00000C00")); -- unused address
 						   			   
 
 end ThresholdPkg;

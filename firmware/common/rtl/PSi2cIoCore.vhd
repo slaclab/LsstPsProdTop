@@ -108,13 +108,13 @@ architecture rtl of PSi2cIoCore is
          connectivity         => X"0001"));
 
 	constant PS_FULL_ADDR_FILT_ARRAY_C : PsWrFiltAddrArray(NUM_MAX_PS_C-1 downto 0) := (
-                           6 => (0 => (AXI_MASTERS_CONFIG_C(0).baseAddr + PsWrFiltAddrArray(0)(0))),
-                           5 => (0 => (AXI_MASTERS_CONFIG_C(1).baseAddr + PsWrFiltAddrArray(1)(0))),
-	                       4 => (0 => (AXI_MASTERS_CONFIG_C(2).baseAddr + PsWrFiltAddrArray(2)(0))), -- unused address
-						   3 => (0 => (AXI_MASTERS_CONFIG_C(3).baseAddr + PsWrFiltAddrArray(3)(0))), -- unused address
-						   2 => (0 => (AXI_MASTERS_CONFIG_C(4).baseAddr + PsWrFiltAddrArray(4)(0))), -- unused address
-						   1 => (0 => (AXI_MASTERS_CONFIG_C(5).baseAddr + PsWrFiltAddrArray(5)(0))), -- unused address
-						   0 => (0 => (AXI_MASTERS_CONFIG_C(6).baseAddr + PsWrFiltAddrArray(6)(0))));
+                           6 => (0 => (AXI_MASTERS_CONFIG_C(6).baseAddr + PS_ADDR_FILT_ARRAY_C(6)(0))),
+                           5 => (0 => (AXI_MASTERS_CONFIG_C(5).baseAddr + PS_ADDR_FILT_ARRAY_C(5)(0))),
+	                       4 => (0 => (AXI_MASTERS_CONFIG_C(4).baseAddr + PS_ADDR_FILT_ARRAY_C(4)(0))), -- unused address
+						   3 => (0 => (AXI_MASTERS_CONFIG_C(3).baseAddr + PS_ADDR_FILT_ARRAY_C(3)(0))), -- unused address
+						   2 => (0 => (AXI_MASTERS_CONFIG_C(2).baseAddr + PS_ADDR_FILT_ARRAY_C(2)(0))), -- unused address
+						   1 => (0 => (AXI_MASTERS_CONFIG_C(1).baseAddr + PS_ADDR_FILT_ARRAY_C(1)(0))), -- unused address
+						   0 => (0 => (AXI_MASTERS_CONFIG_C(0).baseAddr + PS_ADDR_FILT_ARRAY_C(0)(0))));
 						   
    signal mAxiWriteMasters : AxiLiteWriteMasterArray(7 downto 0);
    signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(7 downto 0);
@@ -248,13 +248,14 @@ begin
    PsAxiBusFilt : entity work.AxiLiteWriteFilter
       generic map (
          TPD_G              => TPD_G,
-         SIZE_G             => 1,
-         ADDR_G             => PS_ADDR_FILT_ARRAY_C(i),
-         AXI_ERROR_RESP_G    => AXI_RESP_DECERR_C)
+         FILTER_SIZE_G      => 1,
+         FILTER_ADDR_G      => PS_FULL_ADDR_FILT_ARRAY_C(i),
+         AXI_ERROR_RESP_G   => AXI_RESP_DECERR_C)
       port map (
          axilClk             => axiClk,
          axilRst             => axiRst,
 		 enFilter            => unlockFilt,
+		 blockAll            => BLOCK_FILT_C(i),
          sAxilWriteMaster    => fAxiWriteMasters(i),
          sAxilWriteSlave     => fAxiWriteSlaves(i),
          mAxilWriteMaster    => mAxiWriteMasters(i),
@@ -370,7 +371,9 @@ begin
       generic map (
          TPD_G               => TPD_G,
          SIMULATION_G        => SIMULATION_G,
-         REB_number          => REB_number)
+         REB_number          => REB_number,
+		 FILT_ADDR0           => PS_FULL_ADDR_FILT_ARRAY_C(5)(0),
+		 FILT_ADDR1           => PS_FULL_ADDR_FILT_ARRAY_C(6)(0))
       port map (
          axiClk          => axiClk,
          axiRst          => axiRst,

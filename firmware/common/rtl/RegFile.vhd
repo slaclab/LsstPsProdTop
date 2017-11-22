@@ -190,7 +190,7 @@ architecture rtl of RegFile is
    signal dnaValue : slv(127 downto 0) := (others => '0');
    signal fdValid  : sl               := '0';
    signal fdSerial : slv(63 downto 0) := (others => '0');
-   signal temp_i2cRegMasterIn : I2cRegMasterInType;
+--   signal temp_i2cRegMasterIn : I2cRegMasterInType;
    signal temp_i2cRegMasterOut : I2cRegMasterOutType;
    constant  ONEVECT : slv(NUM_MAX_PS_C-1 downto 0) := (Others => '1');
 
@@ -495,9 +495,15 @@ begin
 				 when X"e0" =>
                         v.axiReadSlave.rdata := r.DS75LV_cntl;
                  when X"e1" =>
-                         v.axiReadSlave.rdata := r.DS75LV_result(31 downto 30) & r.initDone & r.fail & r.stV & r.DS75LV_result(23 downto 0);
-
-                  when others =>
+                         v.axiReadSlave.rdata := r.DS75LV_result(31 downto 30) & r.initDone & r.fail & r.stV & toSlv(r.cnt,2) &
+						                         toSlv(r.f_cnt,2) & r.valid & r.DS75LV_result(16 downto 0);
+				when X"e2" =>
+                        v.axiReadSlave.rdata := r.inSlv(0);
+				when X"e3" =>
+                        v.axiReadSlave.rdata := r.inSlv(1);
+				when X"e4" =>
+                        v.axiReadSlave.rdata := r.inSlv(2);						
+                when others =>
                      axiReadResp := AXI_ERROR_RESP_G;
                end case;
 
@@ -1221,21 +1227,21 @@ begin
       -- end loop;
       case (r.DS75LV_cntl(22 downto 20)) is
             when "000" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"48";
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"48";
 			when "001" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"49";
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"49";
             when "010" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4a";
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4a";
 			when "011" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4b";				
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4b";				
             when "100" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4c";
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4c";
 			when "101" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4d";				
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4d";				
             when "110" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4e";
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4e";
 			when "111" =>
-                temp_i2cRegMasterIn.i2cAddr <= "00" & X"4e";
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4e";
 	  end case;
 
 	  for i in (TEMP_ENTRY_C-1) downto 0 loop
@@ -1252,14 +1258,14 @@ begin
 		 
          when IDLE_S =>
             -- Wait for DONE to set
-			v.stV   := "0001";
-			if (r.DS75LV_cntl(31) = '1') then
-			   v.cnt   := 0;
-			   v.f_cnt := 0;
-			   v.fail  := '0';
-			   v.initDone := '0';
-			   v.state        := IDLE_S;
-            elsif (r.DS75LV_reqReg = '1') then
+		   v.stV   := "0001";
+		   v.cnt   := 0;
+		   v.f_cnt := 0;
+		   v.fail  := '0';
+		   v.initDone := '0';
+		   v.temp_i2cRegMasterIn.regReq := '0';
+		   v.state        := IDLE_S;
+            if (r.DS75LV_reqReg = '1') then
                -- Next state
                v.state       := W_START_S;
             end if;
@@ -1291,11 +1297,10 @@ begin
          when W_WAIT_S =>
 		    v.stV   := "0011";
             -- Wait for DONE to set
+			v.temp_i2cRegMasterIn.regReq := '0';
             if (r.DS75LV_cntl(31) = '1') then
 			   v.state        := IDLE_S;
 			elsif (temp_i2cRegMasterOut.regAck = '1' OR temp_i2cRegMasterOut.regFail = '1') then
-               -- Reset the flag
-                v.temp_i2cRegMasterIn.regReq := '0';
                -- Next state
                v.state       := W_START_S;
             end if;
@@ -1309,6 +1314,7 @@ begin
                 v.cnt := 0;
 			    v.state        := CHECK_OPER_S;				
             elsif(temp_i2cRegMasterOut.regAck = '0' AND temp_i2cRegMasterOut.regFail = '0') then
+			   v.cnt := r.cnt + 1;
 			   v.temp_i2cRegMasterIn.tenbit := '0';
 			   v.temp_i2cRegMasterIn.regAddr := X"0000000" & "00" & TEMP_GET_C(r.cnt)(17 downto 16);  -- specify
 			   v.temp_i2cRegMasterIn.regWrData := X"0000" & "00" & TEMP_GET_C(r.cnt)(7 downto 0) & TEMP_GET_C(r.cnt)(15 downto 8);  -- Endieness
@@ -1325,12 +1331,10 @@ begin
          when R_WAIT_S =>
 		 v.stV   := "0101";
             -- Wait for DONE to set
+			v.temp_i2cRegMasterIn.regReq  := '0';
             if (r.DS75LV_cntl(31) = '1') then
 			   v.state        := IDLE_S;
 			elsif (temp_i2cRegMasterOut.regAck = '1' OR temp_i2cRegMasterOut.regFail = '1') then
-               -- Reset the flag
-               v.temp_i2cRegMasterIn.regReq  := '0';
-			   
 			   v.inSlv(r.cnt - 1)(31) := temp_i2cRegMasterOut.regAck;
                v.inSlv(r.cnt - 1)(30) := temp_i2cRegMasterOut.regFail;
                v.inSlv(r.cnt - 1)(23 downto 16) := temp_i2cRegMasterOut.regFailCode;
@@ -1371,7 +1375,7 @@ begin
 			  v.temp_i2cRegMasterIn.tenbit := '0';
 			  v.temp_i2cRegMasterIn.regAddr := X"0000000" & "00" & r.DS75LV_cntl(17 downto 16);  -- specify
 			  v.temp_i2cRegMasterIn.regWrData := X"0000" & "00" & r.DS75LV_cntl(7 downto 0) & r.DS75LV_cntl(15 downto 8);  -- Endieness
-			  v.temp_i2cRegMasterIn.regOp := r.DS75LV_cntl(18) and r.unlockSeting(0);  -- only write when unlocked
+			  v.temp_i2cRegMasterIn.regOp := r.DS75LV_cntl(18) and not(r.unlockSeting(0));  -- only write when unlocked -> '0'
 			  v.temp_i2cRegMasterIn.regAddrSkip := '0';
 			  v.temp_i2cRegMasterIn.regAddrSize := "00";
 			  v.temp_i2cRegMasterIn.regDataSize := '0' & r.DS75LV_cntl(19);
@@ -1384,11 +1388,10 @@ begin
          when REG_WAIT_S =>
 		 v.stV   := "1000";
             -- Wait for DONE to set
+			v.temp_i2cRegMasterIn.regReq  := '0';
             if (r.DS75LV_cntl(31) = '1') then
 			   v.state        := IDLE_S;
 			elsif (temp_i2cRegMasterOut.regAck = '1' OR temp_i2cRegMasterOut.regFail = '1') then
-               -- Reset the flag
-               v.temp_i2cRegMasterIn.regReq  := '0';
 			   v.DS75LV_result(31) := temp_i2cRegMasterOut.regAck;
 			   v.DS75LV_result(30) := temp_i2cRegMasterOut.regFail;
 			   v.DS75LV_result(23 downto 16) := temp_i2cRegMasterOut.regFailCode;
