@@ -286,7 +286,7 @@ begin
       port map (
          axiClk          => axiClk,
          axiRst          => axiRst,
-		 selectCR        => axiRst,
+		 selectCR        => selectCR,
 		 ps_sr_addresses(0)    => SR_PS_THRESHOLD_C(i)(0).Address,
 		 ps_sr_addresses(1)    => SR_PS_THRESHOLD_C(i)(1).Address,
 		 ps_sr_addresses(2)    => SR_PS_THRESHOLD_C(i)(2).Address,

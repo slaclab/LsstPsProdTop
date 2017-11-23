@@ -329,7 +329,7 @@ begin
                v.cnt := r.cnt + 1;
 			   v.req.request  := '1';
                v.req.rnw      := '1';   -- Read operation
-               v.req.address  := x"0000000C"; -- to read address 3
+               v.req.address  := x"00000010"; -- to read address 4 to enable proper operation 
 			   -- Next state
                v.state        := F_WAIT_S;
             end if;
