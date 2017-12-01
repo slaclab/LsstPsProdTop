@@ -45,6 +45,7 @@ entity REBSequencer is
 	  hvOn         : in  sl;
 	  rebOnOff     : out sl;
 	  rebOnOff_add : out sl;
+	  RegFileIn    : in  RegFileInType := REGFILEIN_C;
 	  configDone   : out sl;
 	  allRunning   : out sl;
 	  initDone_add : in  sl;
@@ -154,7 +155,8 @@ begin
          dataOut  => alarmSynced);
    
  
-   comb : process (axiRst, rebOn, hvOn, initDone, initDone_temp, initFail_temp, initFail, initDone_add, initFailS, alarmSynced, selectCR, unlockPsOn, dout,  r ) is
+   comb : process (axiRst, rebOn, hvOn, initDone, initDone_temp, initFail_temp, initFail, 
+                   RegFileIn, initDone_add, initFailS, alarmSynced, selectCR, unlockPsOn, dout,  r ) is
       variable v           : RegType;
       
    begin
@@ -184,7 +186,7 @@ begin
          when WAIT_START_S =>
 		    v.stV := "00000";
 		    v.rebOnOff                      := r.rebOn_d and (unlockPsOn);  --temp to be able to turn of PS
-            if (r.rebOn = '1' and r.rebOn_d = '0') then
+            if (r.rebOn = '1' and r.rebOn_d = '0' and RegFileIn.enable_in = '1') then
                v.powerFailure       := '0';
 			   v.configDone           := '0';
 			   v.allRunning           := '0';
@@ -196,7 +198,7 @@ begin
  
          when WAIT_CONFIG_S =>
 		    v.stV := "00001";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
                v.masterState                   := WAIT_START_S;                                          
             elsif (r.initDone = '1') then
 			   v.din                           := "00000001";
@@ -205,7 +207,7 @@ begin
                
          when TURN_ON_PS0_S =>
 		    v.stV := "00010";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                          := "11111110" AND r.din; --
                v.masterState                   := TURN_OFF_PS0_S;
@@ -224,7 +226,7 @@ begin
 
 		when TURN_ON_PS1_S =>
 		    v.stV := "00011";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                          := "11111101" AND r.din; --
                v.masterState                   := TURN_OFF_PS1_S;
@@ -243,7 +245,7 @@ begin
 			
 		when TURN_ON_PS2_S =>
 		    v.stV := "00100";
-            if (rebOn = '0') then
+            if (rebOn = '0'  OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                          := "11101111" AND r.din; --
                v.masterState                   := TURN_OFF_PS2_S;
@@ -262,7 +264,7 @@ begin
 
 		when TURN_ON_PS3_S =>
 		    v.stV := "00101";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                          := "11110111" AND r.din; --
                v.masterState                   := TURN_OFF_PS3_S;
@@ -285,7 +287,7 @@ begin
 
 		when TURN_ON_PS4_S =>
 		    v.stV := "00110";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                          := "11011111" AND r.din; --
                v.masterState                   := TURN_OFF_PS4_S;
@@ -304,7 +306,7 @@ begin
 
 		when TURN_ON_PS5_S =>
 		    v.stV := "00111";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                            := "11111011" AND r.din; --
 			   v.masterState                   := TURN_OFF_PS5_S;
@@ -327,7 +329,7 @@ begin
 			
 		when TURN_ON_PS6_S =>
 		    v.stV := "01000";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   if selectCR = '0' then
 			      v.din                          := "11011111" AND r.din; --
@@ -355,7 +357,7 @@ begin
 
 		when TURN_ON_PS7_S =>
 		    v.stV := "01001";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;
@@ -375,7 +377,7 @@ begin
 
 		when MONITORING_S =>
 		    v.stV := "01010";
-            if (rebOn = '0') then
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.din                           := "10111111" AND r.din; -- 
 			   v.configDone                      := '0';

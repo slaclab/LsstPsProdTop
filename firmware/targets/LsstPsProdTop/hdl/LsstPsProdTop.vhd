@@ -340,6 +340,7 @@ begin
 			   hvOn           => RegFileOut.din(i*7 + 6),
 			   rebOnOff       => rebOnOff(i),
 			   rebOnOff_add   => rebOnOff_add(i),
+			   RegFileIn      => RegFileIn,
 			   configDone     => configDone(i),
 			   allRunning     => allRunning(i),
 			   initDone_add   => initDone_add(i),
