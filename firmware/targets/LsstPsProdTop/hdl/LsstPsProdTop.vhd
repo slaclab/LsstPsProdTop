@@ -436,7 +436,7 @@ begin
           RegFileIn.dout0 <= dout0;
           RegFileIn.dout1 <= dout1;
           RegFileIn.REB_config_done <= (Others => '1');  -- Unused for now , need for case if measuring IC need addtional configuration befere normal sequencing
-          RegFileIn.enable_in <= enable_in;
+          RegFileIn.enable_in <= not enable_in;  -- low true logic
           RegFileIn.spare_in <= spare_in;
           RegFileIn.temp_Alarm <= temp_Alarm;
           RegFileIn.fp_los <= fp_los;
