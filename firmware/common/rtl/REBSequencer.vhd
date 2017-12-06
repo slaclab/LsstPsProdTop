@@ -107,7 +107,8 @@ architecture rtl of REBSequencer is
 	  powerFailureD   : sl;
 	  configDone     : sl;
 	  allRunning     : sl;
-	  powerFault   : slv(17 downto 0);
+	  powerFault     : slv(17 downto 0);
+	  powerFaultStart : slv(17 downto 0);
 	  cnt             : natural range 0 to Delay_period;
 	  masterState     : MasterStateType;
    end record RegType;
@@ -124,7 +125,8 @@ architecture rtl of REBSequencer is
 	  powerFailureD    => '0',
 	  configDone       => '0',
 	  allRunning       => '0',
-	  powerFault    => (others => '0'),
+	  powerFault       => (others => '0'),
+	  powerFaultStart  => (others => '0'),
 	  cnt              => 0,
       masterState      => WAIT_START_S);
 
@@ -167,11 +169,13 @@ begin
 	  if (selectCR = '1') and (REB_number = x"0" OR REB_number =x"3") then 
 			     v.rebOnOff_add                      := r.rebOnOff;
 				 v.initDone                          := initDone and initDone_add and initDone_temp;
-				 v.powerFault                     := initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0);  -- Zeros to exclude unused checks
+				 v.powerFault                        := initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0);  -- Zeros to exclude unused checks
+	             v.powerFaultStart                   := FAILMASK_START AND (initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0));  -- Zeros to exclude unused checks
 	  else
 	             v.rebOnOff_add                      := '0';
 				 v.initDone                          := initDone and initDone_temp;
-				 v.powerFault                     := initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0);
+				 v.powerFault                        := initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0);
+				 v.powerFaultStart                   := FAILMASK_START AND (initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0));
 
 	  end if;
 	  
@@ -211,7 +215,7 @@ begin
 			   v.cnt                             := 0;
 			   v.din                          := "11111110" AND r.din; --
                v.masterState                   := TURN_OFF_PS0_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                          := "11111110" AND r.din; --
@@ -230,7 +234,7 @@ begin
 			   v.cnt                             := 0;
 			   v.din                          := "11111101" AND r.din; --
                v.masterState                   := TURN_OFF_PS1_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                          := "11111101" AND r.din; --
@@ -249,7 +253,7 @@ begin
 			   v.cnt                             := 0;
 			   v.din                          := "11101111" AND r.din; --
                v.masterState                   := TURN_OFF_PS2_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                          := "11101111" AND r.din; --
@@ -268,7 +272,7 @@ begin
 			   v.cnt                             := 0;
 			   v.din                          := "11110111" AND r.din; --
                v.masterState                   := TURN_OFF_PS3_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                          := "11110111" AND r.din; --
@@ -291,7 +295,7 @@ begin
 			   v.cnt                             := 0;
 			   v.din                          := "11011111" AND r.din; --
                v.masterState                   := TURN_OFF_PS4_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                          := "11011111" AND r.din; --
@@ -310,7 +314,7 @@ begin
 			   v.cnt                             := 0;
 			   v.din                            := "11111011" AND r.din; --
 			   v.masterState                   := TURN_OFF_PS5_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                            := "11111011" AND r.din; --
@@ -337,7 +341,7 @@ begin
 			      v.din                          := "01111111" AND r.din; --
 			   end if;
                v.masterState                   := TURN_OFF_PS6_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   if selectCR = '0' then
@@ -361,7 +365,7 @@ begin
 			   v.cnt                             := 0;
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                           := "10111111" AND r.din; --

@@ -26,6 +26,7 @@ package ThresholdPkg is
    constant UNLOCK_FILTERING  : slv(31 downto 0) := x"DE_AD_BE_EF";
    constant UNLOCK_PS_STAY_ON : slv(31 downto 0) := x"DE_AD_BE_EF";
    constant UNLOCK_MANUAL_PS_ON : slv(31 downto 0) := x"DE_AD_BE_EF";
+   constant FAILMASK_START      : slv(19 downto 0) := x"F_DA_AA";
    
    constant TEMP_ENTRY_C      : natural := 3;
    constant TEMP_SET_C : Slv20Array(0 to TEMP_ENTRY_C-1) := (
