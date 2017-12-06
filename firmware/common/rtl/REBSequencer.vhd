@@ -170,12 +170,12 @@ begin
 			     v.rebOnOff_add                      := r.rebOnOff;
 				 v.initDone                          := initDone and initDone_add and initDone_temp;
 				 v.powerFault                        := initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0);  -- Zeros to exclude unused checks
-	             v.powerFaultStart                   := FAILMASK_START AND (initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0));  -- Zeros to exclude unused checks
+	             v.powerFaultStart                   := FAILMASK_START(17 downto 0) AND (initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0));  -- Zeros to exclude unused checks
 	  else
 	             v.rebOnOff_add                      := '0';
 				 v.initDone                          := initDone and initDone_temp;
 				 v.powerFault                        := initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0);
-				 v.powerFaultStart                   := FAILMASK_START AND (initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0));
+				 v.powerFaultStart                   := FAILMASK_START(17 downto 0) AND (initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0));
 
 	  end if;
 	  
