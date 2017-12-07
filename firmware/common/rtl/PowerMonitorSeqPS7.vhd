@@ -141,12 +141,15 @@ begin
 		if (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5") then
 		   v.InitDoneS(NUM_MAX_PS_C-1 downto NUM_CR_ADD_PS_C-1) := (Others => '1');
 		   v.failS(NUM_MAX_PS_C-1 downto NUM_CR_ADD_PS_C-1) := (Others => '0');
-		   v.InitDoneS(NUM_CR_ADD_PS_C-2 downto 0) := SeqCntlOuts(NUM_CR_ADD_PS_C-2 downto 0).initDone;
-		   v.failS(NUM_CR_ADD_PS_C-2 downto 0) := SeqCntlOuts(NUM_CR_ADD_PS_C-2 downto 0).fail;
-		   
+		   for i in (NUM_CR_ADD_PS_C-2) downto 0 loop
+				v.InitDoneS(i) := SeqCntlOuts(i).initDone;
+				v.failS(i := SeqCntlOuts(i).fail;
+		   end loop;
 		else
-           v.InitDoneS(NUM_MAX_PS_C-1 downto 0) := SeqCntlOuts(NUM_MAX_PS_C-1 downto 0).initDone;
-		   v.failS(NUM_MAX_PS_C-1 downto 0) := SeqCntlOuts(NUM_MAX_PS_C-1 downto 0).fail;
+		   for i in (NUM_MAX_PS_C-1) downto 0 loop
+				v.InitDoneS(i) := SeqCntlOuts(i).initDone;
+				v.failS(i) := SeqCntlOuts(i).fail;
+			end loop;
 		end if;
 --     end loop;
       ----------------------------------------------------------------------------------------------
