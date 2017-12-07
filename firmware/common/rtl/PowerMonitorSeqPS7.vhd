@@ -143,7 +143,7 @@ begin
 		   v.failS(NUM_MAX_PS_C-1 downto NUM_CR_ADD_PS_C-1) := (Others => '0');
 		   for i in (NUM_CR_ADD_PS_C-2) downto 0 loop
 				v.InitDoneS(i) := SeqCntlOuts(i).initDone;
-				v.failS(i := SeqCntlOuts(i).fail;
+				v.failS(i) := SeqCntlOuts(i).fail;
 		   end loop;
 		else
 		   for i in (NUM_MAX_PS_C-1) downto 0 loop
