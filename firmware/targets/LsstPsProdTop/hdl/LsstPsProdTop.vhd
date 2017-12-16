@@ -164,7 +164,7 @@ architecture top_level of LsstPsProdTop is
 
    signal heartBeat        : sl;
    signal ethLinkUp        : sl;
-   
+
    signal rebOnOff         : slv(5 downto 0);
    signal rebOnOff_add     : slv(5 downto 0);
    signal reb_on_l         : slv(5 downto 0);
@@ -174,15 +174,15 @@ architecture top_level of LsstPsProdTop is
    signal initFail_add     : slv(5 downto 0);
    signal initDone         : slv(5 downto 0);
    signal initFail         : slv(5 downto 0);
-   signal powerFailure     : slv(5 downto 0);   
-   signal selectCR         : sl; 
-   signal din_l            : slv(47 downto 0); 
+   signal powerFailure     : slv(5 downto 0);
+   signal selectCR         : sl;
+   signal din_l            : slv(47 downto 0);
    signal din_out          : slv(41 downto 0);
-   signal dout_l           : slv(95 downto 0);   
+   signal dout_l           : slv(95 downto 0);
    signal dout             : slv(83 downto 0);
-   signal StatusSeq        : slv32Array(5 downto 0); 
-      
-   
+   signal StatusSeq        : slv32Array(5 downto 0);
+
+
 
 
    attribute dont_touch                 : string;
@@ -295,7 +295,7 @@ begin
 		 initFail       => initFail,
 		 selectCR       => selectCR,
          StatusSeq      => StatusSeq,
-         powerFailure   => powerFailure,   
+         powerFailure   => powerFailure,
 		 din_out        => din_out,
 		 reb_on_out     => reb_on_l,
 
@@ -314,10 +314,10 @@ begin
             port map (
                axiClk         => axilClk,
                axiRst         => axilRst,
-			   REB_on         => reb_on_l(i), --RegFileOut.reb_on(i),  -- 
+			   REB_on         => reb_on_l(i), --RegFileOut.reb_on(i),  --
 			   selectCR        => selectCR,
 			   unlockFilt      => RegFileOut.unlockSeting(0),
-			   
+
                axiReadMaster  => axilReadMasters(PS_AXI_INDEX_ARRAY_C(i)),
                axiReadSlave   => axilReadSlaves(PS_AXI_INDEX_ARRAY_C(i)),
                axiWriteMaster => axilWriteMasters(PS_AXI_INDEX_ARRAY_C(i)),
@@ -336,7 +336,7 @@ begin
             port map (
                axiClk         => axilClk,
                axiRst         => axilRst,
-			   rebOn          => RegFileOut.reb_on(i),  -- 
+			   rebOn          => RegFileOut.reb_on(i),  --
 			   hvOn           => RegFileOut.din(i*7 + 6),
 			   rebOnOff       => rebOnOff(i),
 			   rebOnOff_add   => rebOnOff_add(i),
@@ -356,8 +356,8 @@ begin
 			   temp_Alarm     => temp_Alarm,
                Status         => StatusSeq(i),
                powerFailure   => powerFailure(i)
-			   );			   
-			   
+			   );
+
     end generate PS_REB_intf;
 	initDone_add <= "00" & initDone(5) & "00" & initDone(2);
 	initFail_add <= "00" & initFail(5) & "00" & initFail(2);
@@ -389,20 +389,20 @@ begin
 	din_out(39) <= not(din_l(44));
 	din_out(40) <= din_l(45);
 	din_out(41) <= not(din_l(46));
- 
+
     din <= din_out;
-	
+
 	DOUT_REARRANGE: for i in 41 downto 0 generate
         dout(2 * i + 1 downto 2*i) <= dout1(i) & dout0(i);
     end generate DOUT_REARRANGE;
-	
+
     dout_l(15 downto 0) <= not(dout(29 downto 28)) & not(dout(13 downto 0));
 	dout_l(31 downto 16) <= "00" & not(dout(27 downto 14));
 	dout_l(47 downto 32) <= "00" & not(dout(41 downto 28));
 	dout_l(63 downto 48) <= not(dout(71 downto 70)) & not(dout(55 downto 42));
 	dout_l(79 downto 64) <= "00" & not(dout(69 downto 56));
 	dout_l(95 downto 80) <= "00" & not(dout(83 downto 70));
-	
+
 	reb_on_l(0) <= rebOnOff(0);
 	reb_on_l(1) <= rebOnOff(1);
 	reb_on_l(2) <= rebOnOff(2) OR rebOnOff_add(0);
@@ -410,8 +410,8 @@ begin
 	reb_on_l(4) <= rebOnOff(4);
 	reb_on_l(5) <= rebOnOff(5) OR rebOnOff_add(3);
 	reb_on <= reb_on_l;
-	
-    led(2)  <= (heartBeat and not(axilRst)) OR 
+
+    led(2)  <= (heartBeat and not(axilRst)) OR
 	           (initDone(5) and initDone(4) and initDone(3) and initDone(2)
 			   and initDone(1) and initDone(0));
     led(1)  <= ethLinkUp and not(axilRst); --
@@ -474,7 +474,7 @@ begin
              vPIn           => vPIn,
              vNIn           => vNIn);
 
-			 
+
 			    ------------------------------------------------------------------------------
    -- Unused AXI-Lite buses must be terminated to prevent hanging the bus forever
    ------------------------------------------------------------------------------
@@ -487,9 +487,9 @@ begin
          -- axiReadMaster  => axilReadMasters(XADC_INDEX_C),
          -- axiReadSlave   => axilReadSlaves(XADC_INDEX_C),
          -- axiWriteMaster => axilWriteMasters(XADC_INDEX_C),
-         -- axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C));   
-		 
-		 
+         -- axiWriteSlave  => axilWriteSlaves(XADC_INDEX_C));
+
+
          ----------------------
          -- AXI-Lite: Boot Prom
          ----------------------
