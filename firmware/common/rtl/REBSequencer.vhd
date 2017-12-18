@@ -203,7 +203,9 @@ begin
          when WAIT_CONFIG_S =>
 		    v.stV := "00001";
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
-               v.masterState                   := WAIT_START_S;                                          
+               v.masterState                   := WAIT_START_S;  
+            elsif (r.initFail = '1') then
+               v.masterState                   := WAIT_START_S;  			   
             elsif (r.initDone = '1') then
 			   v.din                           := "00000001";
                v.masterState                   := TURN_ON_PS0_S; 
