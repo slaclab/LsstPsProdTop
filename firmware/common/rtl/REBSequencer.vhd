@@ -101,6 +101,7 @@ architecture rtl of REBSequencer is
 	  rebOnOff       : sl;
 	  rebOnOff_add   : sl;
 	  initDone       : sl;
+	  initFail       : sl;
 	  stV            : slv(4 downto 0);
 	  din            : slv(7 downto 0);
 	  powerFailure   : sl;
@@ -119,6 +120,7 @@ architecture rtl of REBSequencer is
 	  rebOnOff         => '0',
 	  rebOnOff_add     => '0',
 	  initDone         => '0',
+	  initFail         => '0',
       stV              => (Others => '0'),
 	  din              => (Others => '0'),
       powerFailure     => '0',
@@ -157,7 +159,7 @@ begin
          dataOut  => alarmSynced);
    
  
-   comb : process (axiRst, rebOn, hvOn, initDone, initDone_temp, initFail_temp, initFail, 
+   comb : process (axiRst, rebOn, hvOn, initDone, initDone_temp, initFail_temp, initFail, initFail_add,
                    RegFileIn, initDone_add, initFailS, alarmSynced, selectCR, unlockPsOn, dout,  r ) is
       variable v           : RegType;
       
@@ -169,11 +171,13 @@ begin
 	  if (selectCR = '1') and (REB_number = x"0" OR REB_number =x"3") then 
 			     v.rebOnOff_add                      := r.rebOnOff;
 				 v.initDone                          := initDone and initDone_add and initDone_temp;
+				 v.initFail                          := initFail OR initFail_add OR initFail_temp;
 				 v.powerFault                        := initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0);  -- Zeros to exclude unused checks
 	             v.powerFaultStart                   := FAILMASK_START(17 downto 0) AND (initFail_temp & initFailS & alarmSynced(15 downto 5) & '0' & alarmSynced(3 downto 0));  -- Zeros to exclude unused checks
 	  else
 	             v.rebOnOff_add                      := '0';
 				 v.initDone                          := initDone and initDone_temp;
+				 v.initFail                          := initFail OR initFail_temp;
 				 v.powerFault                        := initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0);
 				 v.powerFaultStart                   := FAILMASK_START(17 downto 0) AND (initFail_temp & initFail & alarmSynced(15) & "00" & alarmSynced(12 downto 5) & '0' & alarmSynced(3 downto 0));
 
@@ -205,6 +209,7 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
                v.masterState                   := WAIT_START_S;  
             elsif (r.initFail = '1') then
+			   v.powerFailure                  := '1';
                v.masterState                   := WAIT_START_S;  			   
             elsif (r.initDone = '1') then
 			   v.din                           := "00000001";
