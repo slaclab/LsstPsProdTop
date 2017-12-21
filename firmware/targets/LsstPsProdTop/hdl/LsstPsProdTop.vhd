@@ -361,7 +361,7 @@ begin
     end generate PS_REB_intf;
 	initDone_add <= "00" & initDone(5) & "00" & initDone(2);
 	initFail_add <= "00" & initFail(5) & "00" & initFail(2);
-	selectCR <= GA(0);
+	selectCR <= efuse(0); --GA(0);
 	-- Rearangement due to CR special case
 	din_out(3 downto 0) <= din_l(3 downto 0);
 	din_out(4) <= not(din_l(4));
