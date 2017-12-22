@@ -40,7 +40,7 @@ use unisim.vcomponents.all;
 
 entity Mapping is
   generic (
-    TPD_G            : time             := 1 ns;
+    TPD_G            : time             := 1 ns);
   port (
 
     dout0     : in  slv(41 downto 0);
@@ -70,7 +70,7 @@ architecture rtl of Mapping is
 
 begin
 
-   Mapping : process (dout0, dout1, dinMap, sync_DCDCMap, reb_onMap, psI2cInMap, psI2cOut,selectCR ) is
+   U_Mapping : process (dout0, dout1, dinMap, sync_DCDCMap, reb_onMap, psI2cInMap, psI2cOut,selectCR ) is
 
  -- REB 0-2
           dout0Map(20 downto 0)       <= dout0(20 downto 0);
@@ -126,4 +126,7 @@ begin
 		  psI2cIn(41 downto 35)        <= psI2cInMap(27 downto 21);
 		  psI2cOutMap(41 downto 35)    <= psI2cOut(27 downto 21;
 		end if;
+		
+end process U_Mapping;
+
 end rtl;
