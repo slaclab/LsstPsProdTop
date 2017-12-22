@@ -182,13 +182,42 @@ architecture top_level of LsstPsProdTop is
    signal dout             : slv(83 downto 0);
    signal StatusSeq        : slv32Array(5 downto 0);
 
-
-
+	signal dout0Map        : slv(41 downto 0);
+    signal dout1Map        : slv(41 downto 0);
+    signal dinMap          : slv(41 downto 0);
+    signal sync_DCDCMap    : slv(5 downto 0);
+    signal reb_onMap       : slv(5 downto 0);
+  
+	signal psI2cInMap      : i2c_in_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
+    signal psI2cOutMap     : i2c_out_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
+   
 
    attribute dont_touch                 : string;
    attribute dont_touch of RegFileOut    : signal is "true";
 
 begin
+-- Remapping
+  U_Map : entity work.Mapping
+    port map (
+      dout0         => dout0,
+      dout1         => dout1,
+      din           => din,
+      dout0Map      => dout0Map,
+      dout1Map      => dout1Map,
+      dinMap        => dinMap,
+
+      sync_DCDC      => sync_DCDC,
+      reb_on         => reb_on,
+      sync_DCDCMap   => sync_DCDCMap,
+      reb_onMap      => reb_onMap,
+
+      psI2cIn         => psI2cIn,
+      psI2cOut        => psI2cOut,
+      psI2cInMap      => psI2cInMap,
+      psI2cOutMap     => psI2cOutMap,
+
+      selectCR          => selectCR);
+	  
 
   --------------------
   -- Local MAC Address
@@ -390,10 +419,10 @@ begin
 	din_out(40) <= din_l(45);
 	din_out(41) <= not(din_l(46));
 
-    din <= din_out;
+    dinMap <= din_out;
 
 	DOUT_REARRANGE: for i in 41 downto 0 generate
-        dout(2 * i + 1 downto 2*i) <= dout1(i) & dout0(i);
+        dout(2 * i + 1 downto 2*i) <= dout1Map(i) & dout0Map(i);
     end generate DOUT_REARRANGE;
 
     dout_l(15 downto 0) <= not(dout(29 downto 28)) & not(dout(13 downto 0));
@@ -409,7 +438,7 @@ begin
 	reb_on_l(3) <= rebOnOff(3);
 	reb_on_l(4) <= rebOnOff(4);
 	reb_on_l(5) <= rebOnOff(5) OR rebOnOff_add(3);
-	reb_on <= reb_on_l;
+	reb_onMap <= reb_on_l;
 
     led(2)  <= (heartBeat and not(axilRst)) OR
 	           (initDone(5) and initDone(4) and initDone(3) and initDone(2)
@@ -428,13 +457,13 @@ begin
 
   PS_i2c_intf: for i in (7 * (PS_REB_TOTAL_C - 1) + 6) downto 0 generate
             -- not using enable (used for multimaster i2c, have just 1)
-            USDA_ADC: IOBUF port map ( I => psI2cOut(i).sda, O  => psI2cIn(i).sda,  T => psI2cOut(i).sdaoen, IO => SDA_ADC(i));
-            USCL_ADC: IOBUF port map ( I => psI2cOut(i).scl, O  => psI2cIn(i).scl,  T => psI2cOut(i).scloen, IO => SCL_ADC(i));
+            USDA_ADC: IOBUF port map ( I => psI2cOutMap(i).sda, O  => psI2cInMap(i).sda,  T => psI2cOutMap(i).sdaoen, IO => SDA_ADC(i));
+            USCL_ADC: IOBUF port map ( I => psI2cOutMap(i).scl, O  => psI2cInMap(i).scl,  T => psI2cOutMap(i).scloen, IO => SCL_ADC(i));
           end generate PS_i2c_intf;
 
           RegFileIn.GA <= '0' & GA;
-          RegFileIn.dout0 <= dout0;
-          RegFileIn.dout1 <= dout1;
+          RegFileIn.dout0 <= dout0Map;
+          RegFileIn.dout1 <= dout1Map;
           RegFileIn.REB_config_done <= (Others => '1');  -- Unused for now , need for case if measuring IC need addtional configuration befere normal sequencing
           RegFileIn.enable_in <= not enable_in;  -- low true logic
           RegFileIn.spare_in <= spare_in;
@@ -442,7 +471,7 @@ begin
           RegFileIn.fp_los <= fp_los;
 
           --din <= RegFileOut.din;
-          sync_DCDC <= RegFileOut.sync_DCDC;
+          sync_DCDCMap <= RegFileOut.sync_DCDC;
           --reb_on <= RegFileOut.reb_on;
 
           UtestIO: for i in 7 downto 0 generate
