@@ -137,7 +137,7 @@ package ThresholdPkg is
 
    constant SR_CLKHIGH_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
                            (x"00_00_00_01", x"00_00_00_23"),
-                           (x"00_00_00_1A", x"00_00_00_E1"),
+                           (x"00_00_00_1A", x"00_00_00_F0"),   -- diviation due to tripping at max load at some channels
 	                       (x"00_00_00_1B", x"00_00_00_70"),
                            (x"00_00_00_2E", x"00_00_00_A8"),
 	                       (x"00_00_00_2F", x"00_00_00_60"),
