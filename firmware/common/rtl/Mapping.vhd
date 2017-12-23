@@ -125,7 +125,7 @@ begin
 		  sync_DCDC(5)                 <= sync_DCDCMap(3);
 		  reb_on(5)                    <= reb_onMap(3);
 		  psI2cIn(41 downto 35)        <= psI2cInMap(27 downto 21);
-		  psI2cOutMap(41 downto 35)    <= psI2cOut(27 downto 21;
+		  psI2cOutMap(41 downto 35)    <= psI2cOut(27 downto 21);
 		end if;
 		
     end process U_Mapping;
