@@ -245,6 +245,8 @@ begin
          mAxiReadMasters     => mAxiReadMasters,
          mAxiReadSlaves      => mAxiReadSlaves);
 
+  blockFilt <= "00" & unlockFilt & unlockFilt & unlockFilt & unlockFilt & unlockFilt;		  
+
   PS_filt_intf: for i in  6 downto 0 generate
    PsAxiBusFilt : entity work.AxiLiteWriteFilter
       generic map (
