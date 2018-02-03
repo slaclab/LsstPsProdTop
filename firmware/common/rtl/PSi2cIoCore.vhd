@@ -213,6 +213,7 @@ architecture rtl of PSi2cIoCore is
    signal i2cSeqMastersOut : I2cRegMasterOutArray(6 downto 0);
    signal i2c_lock_seq     : sl;
    signal numbPs           : slv(7 downto 0);
+   signal blockFilt         : slv(6 downto 0);
 
 
     attribute dont_touch                 : string;
@@ -255,7 +256,7 @@ begin
          axilClk             => axiClk,
          axilRst             => axiRst,
 		 enFilter            => unlockFilt,
-		 blockAll            => BLOCK_FILT_C(i),
+		 blockAll            => blockFilt(i),
          sAxilWriteMaster    => fAxiWriteMasters(i),
          sAxilWriteSlave     => fAxiWriteSlaves(i),
          mAxilWriteMaster    => mAxiWriteMasters(i),
