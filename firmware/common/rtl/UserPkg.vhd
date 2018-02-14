@@ -121,7 +121,9 @@ package UserPkg is
   constant XADC_INDEX_C          : natural := 8;
   constant BOOT_PROM_INDEX_C     : natural := 9;
 
-
+   constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, x"0000_0000", 22, 18);
+  
+  
      -- Array
 
      constant PS_REB_TOTAL_C     : natural := PS5_AXI_INDEX_C - PS0_AXI_INDEX_C + 1;
