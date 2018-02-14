@@ -3,3 +3,4 @@ source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 
 # Load ruckus files
 loadRuckusTcl "$::DIR_PATH/surf"
+loadRuckusTcl "$::DIR_PATH/lsst-pwr-ctrl-core"
