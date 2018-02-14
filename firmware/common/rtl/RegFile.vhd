@@ -34,7 +34,6 @@ entity RegFile is
       TPD_G           : time    := 1 ns;
       AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_SLVERR_C;
       CLK_PERIOD_G    : real    := 8.0E-9;  -- units of seconds
-      EN_DEVICE_DNA_G : boolean := false;
       EN_DS2411_G     : boolean := false;
 	  FAIL_CNT_C           : integer := 3);
    port (
@@ -60,6 +59,7 @@ entity RegFile is
 	  powerFailure : in slv(5 downto 0);
 	  din_out      : in slv(41 downto 0);
 	  reb_on_out   : in slv(5 downto 0);
+     dnaValue     : in slv(127 downto 0);
 		 
       -- Optional DS2411 interface
       fdSerSdio : inout sl := 'Z';
@@ -187,7 +187,7 @@ architecture rtl of RegFile is
 
    signal dnaValid : sl               := '0';
    signal masterReset : sl               := '0';
-   signal dnaValue : slv(127 downto 0) := (others => '0');
+   -- signal dnaValue : slv(127 downto 0) := (others => '0');
    signal fdValid  : sl               := '0';
    signal fdSerial : slv(63 downto 0) := (others => '0');
 --   signal temp_i2cRegMasterIn : I2cRegMasterInType;
@@ -201,17 +201,8 @@ architecture rtl of RegFile is
 
 begin
 
-   GEN_DEVICE_DNA : if (EN_DEVICE_DNA_G) generate
-      DeviceDna_1 : entity work.DeviceDna
-         generic map (
-            TPD_G => TPD_G)
-         port map (
-            clk      => axiClk,
-            rst      => axiRst,
-            dnaValue => dnaValue,
-            dnaValid => dnaValid);
-   end generate GEN_DEVICE_DNA;
-
+   dnaValid <= '1';
+   
    GEN_DS2411 : if (EN_DS2411_G) generate
       DS2411Core_1 : entity work.DS2411Core
          generic map (
@@ -1282,7 +1273,7 @@ begin
                v.cnt := r.cnt + 1;
 			   v.temp_i2cRegMasterIn.tenbit := '0';
 			   v.temp_i2cRegMasterIn.regAddr := X"0000000" & "00" & TEMP_SET_C(r.cnt)(17 downto 16);  -- specify
-			   v.temp_i2cRegMasterIn.regWrData := X"0000" & "00" & TEMP_SET_C(r.cnt)(7 downto 0) & TEMP_SET_C(r.cnt)(15 downto 8);  -- Endieness
+			   v.temp_i2cRegMasterIn.regWrData := X"0000" & TEMP_SET_C(r.cnt)(7 downto 0) & TEMP_SET_C(r.cnt)(15 downto 8);  -- Endieness
 			   v.temp_i2cRegMasterIn.regOp := TEMP_SET_C(r.cnt)(18);  -- to borrow
 			   v.temp_i2cRegMasterIn.regAddrSkip := '0';
 			   v.temp_i2cRegMasterIn.regAddrSize := "00";
@@ -1317,7 +1308,7 @@ begin
 			   v.cnt := r.cnt + 1;
 			   v.temp_i2cRegMasterIn.tenbit := '0';
 			   v.temp_i2cRegMasterIn.regAddr := X"0000000" & "00" & TEMP_GET_C(r.cnt)(17 downto 16);  -- specify
-			   v.temp_i2cRegMasterIn.regWrData := X"0000" & "00" & TEMP_GET_C(r.cnt)(7 downto 0) & TEMP_GET_C(r.cnt)(15 downto 8);  -- Endieness
+			   v.temp_i2cRegMasterIn.regWrData := X"0000" & TEMP_GET_C(r.cnt)(7 downto 0) & TEMP_GET_C(r.cnt)(15 downto 8);  -- Endieness
 			   v.temp_i2cRegMasterIn.regOp := TEMP_GET_C(r.cnt)(18);  -- to borrow
 			   v.temp_i2cRegMasterIn.regAddrSkip := '0';
 			   v.temp_i2cRegMasterIn.regAddrSize := "00";
@@ -1374,7 +1365,7 @@ begin
             elsif(temp_i2cRegMasterOut.regAck = '0' AND temp_i2cRegMasterOut.regFail = '0' AND r.DS75LV_reqReg = '1') then
 			  v.temp_i2cRegMasterIn.tenbit := '0';
 			  v.temp_i2cRegMasterIn.regAddr := X"0000000" & "00" & r.DS75LV_cntl(17 downto 16);  -- specify
-			  v.temp_i2cRegMasterIn.regWrData := X"0000" & "00" & r.DS75LV_cntl(7 downto 0) & r.DS75LV_cntl(15 downto 8);  -- Endieness
+			  v.temp_i2cRegMasterIn.regWrData := X"0000" & r.DS75LV_cntl(7 downto 0) & r.DS75LV_cntl(15 downto 8);  -- Endieness
 			  v.temp_i2cRegMasterIn.regOp := r.DS75LV_cntl(18) and not(r.unlockSeting(0));  -- only write when unlocked -> '0'
 			  v.temp_i2cRegMasterIn.regAddrSkip := '0';
 			  v.temp_i2cRegMasterIn.regAddrSize := "00";

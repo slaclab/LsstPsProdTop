@@ -28,5 +28,6 @@ build*
 # Only compressed Xilinx images (.bit.gz or .mcs.gz) are allowed
 *.bit
 *.mcs
-
+*.gz
+*.ltx
 *.bin
