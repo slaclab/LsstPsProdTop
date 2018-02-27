@@ -522,7 +522,7 @@ begin
 	  rebOnOff_add  <= r.rebOnOff_add;
       configDone    <= r.configDone;
 	  allRunning    <= r.allRunning;	  
-	  din           <= r.din;
+	  din           <= r.din AND ('1' & NOT(hvOn)  & "111111") ;
 	  powerFailure  <= r.powerFailure;	  
 
 	  if (selectCR = '1') and (REB_number = x"0" OR REB_number =x"3") then 
