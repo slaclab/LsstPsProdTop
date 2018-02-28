@@ -1,22 +1,29 @@
 #!/usr/bin/env python3
-##############################################################################
-## This file is part of 'camera-link-gen1'.
-## It is subject to the license terms in the LICENSE.txt file found in the 
-## top-level directory of this distribution and at: 
-##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-## No part of 'camera-link-gen1', including this file, 
-## may be copied, modified, propagated, or distributed except according to 
-## the terms contained in the LICENSE.txt file.
-##############################################################################
+#-----------------------------------------------------------------------------
+# Title      : PyRogue febBoard Module
+#-----------------------------------------------------------------------------
+# File       : SingleNodeTest.py
+# Created    : 2016-11-09
+# Last update: 2016-11-09
+#-----------------------------------------------------------------------------
+# Description:
+# Rogue interface to FEB board
+#-----------------------------------------------------------------------------
+# This file is part of the LCLS2-PRL. It is subject to 
+# the license terms in the LICENSE.txt file found in the top-level directory 
+# of this distribution and at: 
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+# No part of the LCLS2-PRL, including this file, may be 
+# copied, modified, propagated, or distributed except according to the terms 
+# contained in the LICENSE.txt file.
+#-----------------------------------------------------------------------------
 
 import sys
-import argparse
-
 import pyrogue as pr
 import pyrogue.gui
 import PyQt4.QtGui
-
-from LsstPsProdTop import *
+import argparse
+import LsstPsProdTop as board
 
 # Set the argument parser
 parser = argparse.ArgumentParser()
@@ -26,7 +33,7 @@ parser.add_argument(
     "--ip", 
     type     = str,
     required = True,
-    help     = "IP address of the FPGA",
+    help     = "IP address",
 )  
 
 parser.add_argument(
@@ -35,7 +42,7 @@ parser.add_argument(
     required = False,
     default  = False,
     help     = "hardware emulation (false=normal operation, true=emulation)",
-) 
+)  
 
 parser.add_argument(
     "--pollEn", 
@@ -49,29 +56,29 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Set base
-devTop = pr.Root(name='devTop',description='')
+base = pr.Root(name='base',description='')    
 
-# Add device
-devTop.add(LsstPsProdTop(
-    name  = 'HW',
+# Add Base Device
+base.add(board.Top(
     ip    = args.ip,
     hwEmu = args.hwEmu,
 ))
 
-# Start up the base
-devTop.start(pollEn=args.pollEn)
+# Start the system
+base.start(pollEn=args.pollEn)
+base.Top.Fpga.Core.AxiVersion.printStatus()
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 appTop.setStyle('Fusion')
 guiTop = pyrogue.gui.GuiTop(group='rootMesh')
 guiTop.resize(800, 1000)
-guiTop.addTree(devTop)
+guiTop.addTree(base)
+
 print("Starting GUI...\n");
 
 # Run GUI
-appTop.exec_()
-
-# Shutdown procedures
-devTop.stop()
-exit()
+appTop.exec_()    
+    
+base.stop()
+exit()   
