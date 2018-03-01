@@ -9,7 +9,8 @@
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
 
-from LsstPsProdTop.LsstPsProdTop import *
+from LsstPsProdTop.Top import *
+from LsstPsProdTop.Fpga import *
 from LsstPsProdTop.RegFile import *
 from LsstPsProdTop.PSi2cIoCore import *
 from LsstPsProdTop.PSi2cIo import *
