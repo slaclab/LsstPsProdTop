@@ -285,6 +285,7 @@ begin
 			v.clearAlert                    := '0';
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   v.sequenceDone                    := '1';
 			   v.din                          := "11111110" AND r.din; --
                v.masterState                   := TURN_OFF_PS0_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -331,6 +332,7 @@ begin
 			v.clearAlert                    := '0';
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                           := 0;
+			   v.sequenceDone                    := '1';
 			   v.din                           := "11111101" AND r.din; --
                v.masterState                   := TURN_OFF_PS1_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -377,6 +379,7 @@ begin
 			v.clearAlert                    := '0';
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   v.sequenceDone                    := '1';
 			   v.din                          := "11101111" AND r.din; --
                v.masterState                   := TURN_OFF_PS2_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -426,6 +429,7 @@ begin
 			v.clearAlert                    := '0';
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   v.sequenceDone                    := '1';
 			   v.din                          := "11110111" AND r.din; --
                v.masterState                   := TURN_OFF_PS3_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -471,6 +475,7 @@ begin
 			v.clearAlert                    := '0';
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   v.sequenceDone                    := '1';
 			   v.din                          := "11011111" AND r.din; --
                v.masterState                   := TURN_OFF_PS4_S;
            elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -520,6 +525,7 @@ begin
 			v.clearAlert                    := '0';
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   v.sequenceDone                    := '1';
 			   v.din                            := "11111011" AND r.din; --
 			   v.masterState                   := TURN_OFF_PS5_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -575,6 +581,7 @@ begin
 			v.clearAlert                    := '0';
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   v.sequenceDone                    := '1';
 			   if selectCR = '0' then
 			      v.din                          := "11011111" AND r.din; --
 			   else
