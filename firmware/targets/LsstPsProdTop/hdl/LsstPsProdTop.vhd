@@ -132,7 +132,19 @@ architecture top_level of LsstPsProdTop is
 
    signal efuse    : slv(31 downto 0);
    signal dnaValue : slv(127 downto 0);
-
+   
+--   signal alertCleared : slv(5 downto 0);
+--   signal alertCleared_add : slv(5 downto 0);
+   signal clearAlert   : slv(5 downto 0);
+   signal sequenceDone : slv(5 downto 0);
+--   signal alertCldAck  : slv(5 downto 0);
+   signal clearAlert_add   : slv(5 downto 0);
+   signal sequenceDone_add : slv(5 downto 0);
+--   signal alertCldAck_add  : slv(5 downto 0);
+   signal clearAlert_l   : slv(5 downto 0);
+   signal sequenceDone_l : slv(5 downto 0);
+--   signal alertCldAck_l  : slv(5 downto 0);
+   
    signal psI2cInMap  : i2c_in_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
    signal psI2cOutMap : i2c_out_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
 
@@ -236,6 +248,10 @@ begin
             axiClk         => axilClk,
             axiRst         => axilRst,
             REB_on         => reb_on_l(i),  --RegFileOut.reb_on(i),  --
+--		    alertCleared   => alertCleared(i),
+	        clearAlert     => clearAlert_l(i),
+			sequenceDone   => sequenceDone_l(i),
+--			alertCldAck     => alertCldAck_l(i),
             selectCR       => selectCR,
             unlockFilt     => RegFileOut.unlockSeting(0),
             axiReadMaster  => axilReadMasters(PS_AXI_INDEX_ARRAY_C(i)),
@@ -258,6 +274,15 @@ begin
             axiRst        => axilRst,
             rebOn         => RegFileOut.reb_on(i),  --
             hvOn          => RegFileOut.din(i*7 + 6),
+			retryOnFail   => RegFileOut.retryOnFail, 
+--	        alertCleared  => alertCleared(i),
+--			alertCleared_add  => alertCleared_add(i),
+	        clearAlert    => clearAlert(i),
+			clearAlert_add => clearAlert_add(i),
+			sequenceDone  => sequenceDone(i),
+			sequenceDone_add => sequenceDone_add(i),
+--			alertCldAck     => alertCldAck(i),
+--			alertCldAck_add => alertCldAck_add(i),
             rebOnOff      => rebOnOff(i),
             rebOnOff_add  => rebOnOff_add(i),
             RegFileIn     => RegFileIn,
@@ -281,6 +306,7 @@ begin
    end generate PS_REB_intf;
    initDone_add          <= "00" & initDone(5) & "00" & initDone(2);
    initFail_add          <= "00" & initFail(5) & "00" & initFail(2);
+--   alertCleared_add          <= "00" & alertCleared(5) & "00" & alertCleared(2);
    selectCR              <= efuse(0);   --GA(0);
    -- Rearangement due to CR special case
    din_out(3 downto 0)   <= din_l(3 downto 0);
@@ -330,7 +356,28 @@ begin
    reb_on_l(4) <= rebOnOff(4);
    reb_on_l(5) <= rebOnOff(5) or rebOnOff_add(3);
    reb_onMap   <= reb_on_l;
+   
+   clearAlert_l(0) <= clearAlert(0);
+   clearAlert_l(1) <= clearAlert(1);
+   clearAlert_l(2) <= clearAlert(2) or clearAlert_add(0);
+   clearAlert_l(3) <= clearAlert(3);
+   clearAlert_l(4) <= clearAlert(4);
+   clearAlert_l(5) <= clearAlert(5) or clearAlert_add(3);
+ 
+   sequenceDone_l(0) <= sequenceDone(0);
+   sequenceDone_l(1) <= sequenceDone(1);
+   sequenceDone_l(2) <= sequenceDone(2) or sequenceDone_add(0);
+   sequenceDone_l(3) <= sequenceDone(3);
+   sequenceDone_l(4) <= sequenceDone(4);
+   sequenceDone_l(5) <= sequenceDone(5) or sequenceDone_add(3); 
 
+   -- alertCldAck_l(0) <= alertCldAck(0);
+   -- alertCldAck_l(1) <= alertCldAck(1);
+   -- alertCldAck_l(2) <= alertCldAck(2) or alertCldAck_add(0);
+   -- alertCldAck_l(3) <= alertCldAck(3);
+   -- alertCldAck_l(4) <= alertCldAck(4);
+   -- alertCldAck_l(5) <= alertCldAck(5) or alertCldAck_add(3); 
+   
    led(2) <= (heartBeat and not(axilRst)) or
              (initDone(5) and initDone(4) and initDone(3) and initDone(2)
               and initDone(1) and initDone(0));
@@ -353,6 +400,8 @@ begin
    RegFileIn.spare_in        <= spare_in;
    RegFileIn.temp_Alarm      <= temp_Alarm;
    RegFileIn.fp_los          <= fp_los;
+   RegFileIn.alertCleared    <= clearAlert_l;
+   
 
    --din <= RegFileOut.din;
    sync_DCDCMap <= RegFileOut.sync_DCDC;
