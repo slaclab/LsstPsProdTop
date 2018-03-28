@@ -60,7 +60,7 @@ entity RegFile is
 	  din_out      : in slv(41 downto 0);
 	  reb_on_out   : in slv(5 downto 0);
      dnaValue     : in slv(127 downto 0);
-		 
+
       -- Optional DS2411 interface
       fdSerSdio : inout sl := 'Z';
       -- new user stuff for register file
@@ -93,9 +93,9 @@ architecture rtl of RegFile is
       R_START_S,
       R_WAIT_S,
       CHECK_OPER_S,
-	  WAIT_CMD_S, 
-	  REG_WAIT_S); 
-	  
+	  WAIT_CMD_S,
+	  REG_WAIT_S);
+
    type RegType is record
       scratchPad    : slv(31 downto 0);
       spare         : slv(31 downto 0);
@@ -105,12 +105,14 @@ architecture rtl of RegFile is
       StatusRst_D   : sl;
       writeEnable_D : sl;
       I2C_RESET_CNTL : sl;
-      REB_on_off        : slv(5 downto 0);
+      AlertClearedCnt   : slv(31 downto 0);
+      REB_on_off     : slv(5 downto 0);
       din            : slv(41 downto 0);
       REB_enable    : slv(5 downto 0);
       sync_DCDC     : slv(5 downto 0);
       LED_on        : slv(2 downto 0);
 	  unlockSeting  : slv(2 downto 0);
+	  retryOnFail     : slv(2 downto 0);
 	  unlockPsOn    : slv(31 downto 0);
 	  unlockFilt    : slv(31 downto 0);
 	  unlockManual  : slv(31 downto 0);
@@ -148,12 +150,14 @@ architecture rtl of RegFile is
       StatusRst_D   => '0',
       writeEnable_D => '0',
       I2C_RESET_CNTL => '0',
+      AlertClearedCnt     => (others => '0'),
       REB_on_off        => (others => '0'),
       din            => (others => '0'),
       REB_enable    => (others => '0'),
       sync_DCDC     => (others => '0'),
       LED_on        => (others => '0'),
 	  unlockSeting  => (others => '0'),
+	  retryOnFail    => "001",   -- one default retry
 	  unlockPsOn    => (others => '0'),
 	  unlockFilt    => (others => '0'),
 	  unlockManual  => (others => '0'),
@@ -202,7 +206,7 @@ architecture rtl of RegFile is
 begin
 
    dnaValid <= '1';
-   
+
    GEN_DS2411 : if (EN_DS2411_G) generate
       DS2411Core_1 : entity work.DS2411Core
          generic map (
@@ -270,9 +274,10 @@ begin
       RegFileOut.din(40) <= r.scratchPad(30);
       RegFileOut.din(41) <= NOT r.scratchPad(31);
       v.din((41) downto 35) := r.scratchPad(31 downto 25);
-	  
+
 	  RegFileOut.Tempfail  <= r.fail;
 	  RegFileOut.TempInitDone <= r.initDone;
+	  RegFileOut.retryOnFail <= r.retryOnFail;
 
       if (r.unlockFilt = UNLOCK_FILTERING) then   -- unlock selected
           v.unlockSeting(0) := '0';
@@ -291,8 +296,8 @@ begin
       else
           v.unlockSeting(2) := '0';
       end if;
-	  
-				 
+
+
  --     for i in 3 to 5  loop
  --        RegFileOut.REB_on(i) <= Seq2RegData(i).REB_on;  -- toredirect to output
 --         RegFileOut.din((6 + 7 *i) downto 7*i) <= Seq2RegData(i).din;
@@ -304,7 +309,9 @@ begin
       end loop;
       RegFileOut.unlockSeting <= r.unlockSeting;
 
-
+      for i in RegFileIn.alertCleared'range loop
+         v.AlertClearedCnt((3 * i + 2) downto (3*i))  := r.AlertClearedCnt((3 * i + 2) downto (3*i)) + RegFileIn.alertCleared(i);
+      end loop;
 
       -- To correct unused on PS6 for each reb
       for i in 0 to 5 loop
@@ -383,7 +390,9 @@ begin
 			     v.unlockPsOn  := axiWriteMaster.wdata;
 			 when X"22" =>
 			     v.unlockManual  := axiWriteMaster.wdata;
-				 
+			 when X"24" =>
+			     v.retryOnFail   := axiWriteMaster.wdata(2 downto 0);
+
             when X"e0" =>
                   v.DS75LV_cntl := axiWriteMaster.wdata(31 downto 0);
 
@@ -406,9 +415,9 @@ begin
                      v.axiReadSlave.rdata := x"0000020a"; --FPGA_VERSION_C;
                   when X"01" =>
                     -- v.axiReadSlave.rdata := r.scratchPad;
-					 v.axiReadSlave.rdata :=  
+					 v.axiReadSlave.rdata :=
 					      NOT(din_out(20+21)) & din_out(19+21) & NOT(din_out(18+21)) & din_out(17+21 downto 14+21) & reb_on_out(5)
-					    & NOT(din_out(13+21)) & din_out(12+21) & NOT(din_out(11+21)) & din_out(10+21 downto 7+21) & reb_on_out(4) 
+					    & NOT(din_out(13+21)) & din_out(12+21) & NOT(din_out(11+21)) & din_out(10+21 downto 7+21) & reb_on_out(4)
 						& NOT(din_out(6+21)) & din_out(5+21) & NOT(din_out(4+21)) & din_out(3+21 downto 0+21) & reb_on_out(3)
 						& r.scratchPad(7 downto 0);
                   when X"02" =>
@@ -422,9 +431,9 @@ begin
                      v.axiReadSlave.rdata(4 downto 0) := RegFileIn.GA;
                   when X"05" =>
                      --v.axiReadSlave.rdata := r.spare;
-					 v.axiReadSlave.rdata :=  
+					 v.axiReadSlave.rdata :=
 					      NOT(din_out(20)) & din_out(19) & NOT(din_out(18)) & din_out(17 downto 14) & reb_on_out(2)
-					    & NOT(din_out(13)) & din_out(12) & NOT(din_out(11)) & din_out(10 downto 7) & reb_on_out(1) 
+					    & NOT(din_out(13)) & din_out(12) & NOT(din_out(11)) & din_out(10 downto 7) & reb_on_out(1)
 						& NOT(din_out(6)) & din_out(5) & NOT(din_out(4)) & din_out(3 downto 0) & reb_on_out(0)
 						& r.spare(7 downto 0);
                   when X"06" =>
@@ -453,7 +462,7 @@ begin
                                                             & r.EnableAlarm(3) & r.REB_enable(3) &  r.REB_on_off(3) & r.EnableAlarm(2) & r.REB_enable(2) &  r.REB_on_off(2)
                                                             & r.EnableAlarm(1) & r.REB_enable(1) &  r.REB_on_off(1) & r.EnableAlarm(0) & r.REB_enable(0) &  r.REB_on_off(0);
 
-															
+
 				  when X"10" =>
                      v.axiReadSlave.rdata := selectCR & '0' & allRunning & "00" & configDone &
 					                         "00" & initDone & "00" & initFail;
@@ -472,17 +481,23 @@ begin
 				     v.axiReadSlave.rdata := StatusSeq(4);
 				 when X"17" =>
 				     v.axiReadSlave.rdata := StatusSeq(5);
-					 
+
 				 when X"20" =>
 				     v.axiReadSlave.rdata := r.unlockFilt;
 				 when X"21" =>
 				     v.axiReadSlave.rdata := r.unlockPsOn;
 				 when X"22" =>
-				     v.axiReadSlave.rdata := r.unlockManual;					 
+				     v.axiReadSlave.rdata := r.unlockManual;
 
 				 when X"23" =>
 				     v.axiReadSlave.rdata := x"0000000" & '0' & r.unlockSeting;
-				     	  
+
+				 when X"24" =>
+				     v.axiReadSlave.rdata := x"0000000" & '0' & r.retryOnFail;
+
+				 when X"25" =>
+				     v.axiReadSlave.rdata := r.AlertClearedCnt;
+
 				 when X"e0" =>
                         v.axiReadSlave.rdata := r.DS75LV_cntl;
                  when X"e1" =>
@@ -493,14 +508,14 @@ begin
 				when X"e3" =>
                         v.axiReadSlave.rdata := r.inSlv(1);
 				when X"e4" =>
-                        v.axiReadSlave.rdata := r.inSlv(2);						
+                        v.axiReadSlave.rdata := r.inSlv(2);
                 when others =>
                      axiReadResp := AXI_ERROR_RESP_G;
                end case;
 
             when "01" =>
                 case (axiReadMaster.araddr(9 downto 2)) is
-				
+
 				-- SR Digital
                 when x"00" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(0).address;
@@ -517,7 +532,7 @@ begin
                 when x"06" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(3).address;
 			    when x"07" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(3).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(3).data;
                 when x"08" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(4).address;
 			    when x"09" =>
@@ -546,7 +561,7 @@ begin
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(10).address;
 			    when x"15" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(0)(10).data;
-					  
+
 				-- SR Analog
                 when x"20" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(0).address;
@@ -563,7 +578,7 @@ begin
                 when x"26" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(3).address;
 			    when x"27" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(3).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(3).data;
                 when x"28" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(1)(4).address;
 			    when x"29" =>
@@ -609,7 +624,7 @@ begin
                 when x"46" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(3).address;
 			    when x"47" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(3).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(3).data;
                 when x"48" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(4).address;
 			    when x"49" =>
@@ -638,7 +653,7 @@ begin
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(10).address;
 			    when x"55" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(2)(10).data;
-					  
+
 				-- SR Clk High
                 when x"60" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(0).address;
@@ -655,7 +670,7 @@ begin
                 when x"66" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(3).address;
 			    when x"67" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(3).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(3).data;
                 when x"68" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(3)(4).address;
 			    when x"69" =>
@@ -701,7 +716,7 @@ begin
                 when x"86" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(3).address;
 			    when x"87" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(3).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(3).data;
                 when x"88" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(4)(4).address;
 			    when x"89" =>
@@ -747,7 +762,7 @@ begin
                 when x"a6" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(3).address;
 			    when x"a7" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(3).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(3).data;
                 when x"a8" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(4).address;
 			    when x"a9" =>
@@ -776,7 +791,7 @@ begin
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(10).address;
 			    when x"b5" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(5)(10).data;
-					  
+
 				-- SR Bias
                 when x"c0" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(0).address;
@@ -793,7 +808,7 @@ begin
                 when x"c6" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(3).address;
 			    when x"c7" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(3).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(3).data;
                 when x"c8" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(4).address;
 			    when x"c9" =>
@@ -821,16 +836,16 @@ begin
                 when x"d4" =>
                       v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(10).address;
 			    when x"d5" =>
-                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(10).data;					  
+                      v.axiReadSlave.rdata :=SR_PS_THRESHOLD_C(6)(10).data;
 
                 when others =>
                      axiReadResp := AXI_ERROR_RESP_G;
-            end case;					
+            end case;
 
--- CR					
+-- CR
 	    when "10" =>
             case (axiReadMaster.araddr(9 downto 2)) is
-				
+
 				-- CR Digital
                 when x"00" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(0).address;
@@ -847,7 +862,7 @@ begin
                 when x"06" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(3).address;
 			    when x"07" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(3).data;
                 when x"08" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(4).address;
 			    when x"09" =>
@@ -876,7 +891,7 @@ begin
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(10).address;
 			    when x"15" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(0)(10).data;
-					  
+
 				-- CR Analog
                 when x"20" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(0).address;
@@ -893,7 +908,7 @@ begin
                 when x"26" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(3).address;
 			    when x"27" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(3).data;
                 when x"28" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(1)(4).address;
 			    when x"29" =>
@@ -939,7 +954,7 @@ begin
                 when x"46" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(3).address;
 			    when x"47" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(3).data;
                 when x"48" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(4).address;
 			    when x"49" =>
@@ -968,7 +983,7 @@ begin
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(10).address;
 			    when x"55" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(2)(10).data;
-					  
+
 				-- CR Clk High
                 when x"60" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(0).address;
@@ -985,7 +1000,7 @@ begin
                 when x"66" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(3).address;
 			    when x"67" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(3).data;
                 when x"68" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(3)(4).address;
 			    when x"69" =>
@@ -1031,7 +1046,7 @@ begin
                 when x"86" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(3).address;
 			    when x"87" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(3).data;
                 when x"88" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(4)(4).address;
 			    when x"89" =>
@@ -1077,7 +1092,7 @@ begin
                 when x"a6" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(3).address;
 			    when x"a7" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(3).data;
                 when x"a8" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(4).address;
 			    when x"a9" =>
@@ -1106,7 +1121,7 @@ begin
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(10).address;
 			    when x"b5" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(5)(10).data;
-					  
+
 				-- CR Bias
                 when x"c0" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(0).address;
@@ -1123,7 +1138,7 @@ begin
                 when x"c6" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(3).address;
 			    when x"c7" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(3).data;
                 when x"c8" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(4).address;
 			    when x"c9" =>
@@ -1151,7 +1166,7 @@ begin
                 when x"d4" =>
                       v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(10).address;
 			    when x"d5" =>
-                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(10).data;					  					  
+                      v.axiReadSlave.rdata :=CR_PS_THRESHOLD_C(6)(10).data;
 
 				-- CR Heater
                 when x"e0" =>
@@ -1169,7 +1184,7 @@ begin
                 when x"e6" =>
                       v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(3).address;
 			    when x"e7" =>
-                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(3).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(3).data;
                 when x"e8" =>
                       v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(4).address;
 			    when x"e9" =>
@@ -1197,10 +1212,10 @@ begin
                 when x"f4" =>
                       v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(10).address;
 			    when x"f5" =>
-                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(10).data;					  
+                      v.axiReadSlave.rdata :=CR_PS_ADD_THRESHOLD_C(0)(10).data;
                 when others =>
-                     axiReadResp := AXI_ERROR_RESP_G;	
-			end case; 
+                     axiReadResp := AXI_ERROR_RESP_G;
+			end case;
             when others =>
                axiReadResp := AXI_ERROR_RESP_G;
          end case;
@@ -1224,11 +1239,11 @@ begin
             when "010" =>
                 v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4a";
 			when "011" =>
-                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4b";				
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4b";
             when "100" =>
                 v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4c";
 			when "101" =>
-                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4d";				
+                v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4d";
             when "110" =>
                 v.temp_i2cRegMasterIn.i2cAddr := "00" & X"4e";
 			when "111" =>
@@ -1242,11 +1257,11 @@ begin
                 v.valid(i) := '1';
             end if;
          end loop;
-		 
+
 
 	  case (r.state) is
          ----------------------------------------------------------------------
-		 
+
          when IDLE_S =>
             -- Wait for DONE to set
 		   v.stV   := "0001";
@@ -1260,7 +1275,7 @@ begin
                -- Next state
                v.state       := W_START_S;
             end if;
-			
+
          when W_START_S =>
 		    v.stV   := "0010";
             -- Increment the counter
@@ -1303,7 +1318,7 @@ begin
 			   v.state        := IDLE_S;
 			elsif (r.cnt = TEMP_ENTRY_C) then
                 v.cnt := 0;
-			    v.state        := CHECK_OPER_S;				
+			    v.state        := CHECK_OPER_S;
             elsif(temp_i2cRegMasterOut.regAck = '0' AND temp_i2cRegMasterOut.regFail = '0') then
 			   v.cnt := r.cnt + 1;
 			   v.temp_i2cRegMasterIn.tenbit := '0';
@@ -1317,7 +1332,7 @@ begin
 			   v.temp_i2cRegMasterIn.endianness := '0';			   -- Next state
                v.state        := R_WAIT_S;
             end if;
-	  
+
          ----------------------------------------------------------------------
          when R_WAIT_S =>
 		 v.stV   := "0101";
@@ -1330,7 +1345,7 @@ begin
                v.inSlv(r.cnt - 1)(30) := temp_i2cRegMasterOut.regFail;
                v.inSlv(r.cnt - 1)(23 downto 16) := temp_i2cRegMasterOut.regFailCode;
                v.inSlv(r.cnt - 1)(15 downto 8) := temp_i2cRegMasterOut.regRdData(7 downto 0); -- due to interface and endianness
-               v.inSlv(r.cnt - 1)(7 downto 0) := temp_i2cRegMasterOut.regRdData(15 downto 8); 
+               v.inSlv(r.cnt - 1)(7 downto 0) := temp_i2cRegMasterOut.regRdData(15 downto 8);
                -- Next state
                v.state       := R_START_S;
             end if;
@@ -1353,10 +1368,10 @@ begin
             else
                v.f_cnt := r.f_cnt + 1;
 			   -- Next state
-               v.state        := W_START_S;	  
+               v.state        := W_START_S;
             end if;
       ----------------------------------------------------------------------
-	  
+
 	     when WAIT_CMD_S =>
 		    v.stV   := "0111";
             -- Increment the counter
@@ -1375,7 +1390,7 @@ begin
 			   -- Next state
                v.state        := REG_WAIT_S;
             end if;
-			
+
          when REG_WAIT_S =>
 		 v.stV   := "1000";
             -- Wait for DONE to set
@@ -1391,7 +1406,7 @@ begin
                -- Next state
                v.state       := WAIT_CMD_S;
             end if;
-			
+
       end case;
       ----------------------------------------------------------------------------------------------
       -- Reset
@@ -1400,7 +1415,7 @@ begin
          v             := REG_INIT_C;
          v.masterReset := r.masterReset;
       end if;
-	  
+
       rin <= v;
 
       axiReadSlave  <= r.axiReadSlave;
@@ -1413,7 +1428,7 @@ begin
       RegFileOut.LED_on <= r.LED_on;
       RegFileOut.REB_enable <= r.REB_enable;
       RegFileOut.sync_DCDC <= r.sync_DCDC;
-	  
+
    end process comb;
 
    seq : process (axiClk) is

@@ -45,6 +45,10 @@ entity PowerMonitorSeqPS7 is
 
       REB_on : in sl;
 	  selectCR : in sl;
+--	  alertCleared : out sl;
+	  clearAlert   : in  sl;
+	  sequenceDone : in  sl;
+--	  alertCldAck  : in  sl;
 
       sAxiReadMaster  : in  AxiLiteReadMasterType  := AXI_LITE_READ_MASTER_INIT_C;
       sAxiReadSlave   : out AxiLiteReadSlaveType;
@@ -71,6 +75,7 @@ architecture rtl of PowerMonitorSeqPS7 is
       IDLE_S,
       WAIT_1S_S,
       CONFIG_S,
+	  WAIT_SD_S,
       DONE_S);
 
 
@@ -86,6 +91,7 @@ architecture rtl of PowerMonitorSeqPS7 is
       cntlI2C         : sl;
       fail            : sl;
 	  failS           : slv(NUM_MAX_PS_C-1 downto 0);
+--	  alertCleared    : sl;
       SeqCntlIn       : SeqCntlInType;
       state           : MasterStateType;
       sAxiReadSlave   : AxiLiteReadSlaveType;
@@ -104,6 +110,7 @@ architecture rtl of PowerMonitorSeqPS7 is
       cntlI2C         => '0',
 	  fail            => '0',
 	  failS           => (others => '0'),
+--	  alertCleared    => '0',
 	  SeqCntlIn       => SEC_CNTL_IN_C,
       state           => IDLE_S,
 	  sAxiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
@@ -115,6 +122,8 @@ architecture rtl of PowerMonitorSeqPS7 is
    constant  ONEVECT : slv(NUM_MAX_PS_C-1 downto 0) := (Others => '1');
    signal SeqCntlIn  : SeqCntlInType := SEC_CNTL_IN_C;
    signal SeqCntlOuts : SeqCntlOutTypeArray(6 downto 0);
+--   signal  alertCleared_v : slv(NUM_MAX_PS_C-1 downto 0) ;
+   
 
    attribute dont_touch                 : string;
    attribute dont_touch of r    : signal is "true";
@@ -126,7 +135,8 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Main process
    -------------------------------------------------------------------------------------------------
-   comb : process (axiRst, REB_on, SeqCntlOuts, selectCR,
+   comb : process (axiRst, REB_on, SeqCntlOuts, selectCR, sequenceDone, 
+           --alertCleared_v,
          sAxiWriteMaster, sAxiReadMaster, r ) is
       variable v           : RegType;
 	  variable regCon : AxiLiteEndPointType;
@@ -152,6 +162,15 @@ begin
 			end loop;
 		end if;
 --     end loop;
+
+		-- if (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5")
+			   -- and (alertCleared_v(NUM_CR_ADD_PS_C -1 downto 0) = ONEVECT(NUM_CR_ADD_PS_C-1 downto 0)) then
+		   -- v.alertCleared     := '1';
+		-- elsif (alertCleared_v(NUM_MAX_PS_C -1 downto 0) = ONEVECT(NUM_MAX_PS_C-1 downto 0)) then
+		   -- v.alertCleared     := '1';
+		 -- else
+		   -- v.alertCleared     := '0';
+		 -- end if;
       ----------------------------------------------------------------------------------------------
       -- AXI Slave
       ----------------------------------------------------------------------------------------------
@@ -180,8 +199,6 @@ begin
 
       -- Closeout the transaction
       axiSlaveDefault(regCon,v.sAxiWriteSlave, v.sAxiReadSlave, AXI_ERROR_RESP_G);
-
-
 
 
       case r.state is
@@ -222,25 +239,37 @@ begin
 			elsif r.cnt = (Aq_period) then
                v.cnt := 0;
 			   v.fail := '1';
-			   v.state        := DONE_S;
+			   v.state        := WAIT_SD_S;
 			elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5")
 			       and (r.initDoneS(NUM_CR_ADD_PS_C -1 downto 0) = ONEVECT(NUM_CR_ADD_PS_C-1 downto 0)) then
 			   v.InitDone     := '1';
-			   v.state        := DONE_S;
+			   v.state        := WAIT_SD_S;
             elsif (r.initDoneS(NUM_MAX_PS_C -1 downto 0) = ONEVECT(NUM_MAX_PS_C-1 downto 0)) then
 			   v.InitDone     := '1';
-			   v.state        := DONE_S;
+			   v.state        := WAIT_SD_S;
             elsif (selectCR = '1') and (REB_number = x"2" OR REB_number =x"5")
 			        and (r.failS(NUM_CR_ADD_PS_C -1 downto 0) > 0) then
                v.fail := '1';
-			   v.state        := DONE_S;
+			   v.state        := WAIT_SD_S;
 			elsif r.failS(NUM_MAX_PS_C -1 downto 0) > 0 then
                v.fail := '1';
-			   v.state        := DONE_S;
+			   v.state        := WAIT_SD_S;
 			else
                v.cnt := r.cnt + 1;
             end if;
 
+	      when WAIT_SD_S =>
+		    v.stV := "0101";
+		     -- Configured and wait for PS on to FE
+			if (REB_on = '0') then
+               v.cnt := 0;
+			   v.SeqCntlIn.Ps_On  := '0';
+			   v.state        := IDLE_S;
+			elsif sequenceDone = '1' then
+               v.cntlI2C      := '0';
+			   v.state        := DONE_S;
+            end if;
+			
          when DONE_S =>
 		    v.stV := "0100";
 		     -- Configured and wait for PS off condition, otherwise do noting
@@ -272,6 +301,7 @@ begin
       InitFail <=   r.fail;
 --  lock bus for sequence signal
       i2c_lock_seq  <= r.cntlI2C;
+--	  alertCleared  <= r.alertCleared;
 
 	  --psConfigAddress <= r.psConfigAddress;
 	  --psConfigData <= r.psConfigData;
@@ -298,6 +328,10 @@ begin
          axiClk          => axiClk,
          axiRst          => axiRst,
 		 selectCR        => selectCR,
+--		 alertCleared    => alertCleared_v(i),
+	     clearAlert      => clearAlert,
+		 sequenceDone    => sequenceDone,
+--		 alertCldAck     => alertCldAck,
 		 ps_sr_addresses(0)    => SR_PS_THRESHOLD_C(i)(0).Address,
 		 ps_sr_addresses(1)    => SR_PS_THRESHOLD_C(i)(1).Address,
 		 ps_sr_addresses(2)    => SR_PS_THRESHOLD_C(i)(2).Address,

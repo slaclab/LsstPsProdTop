@@ -122,8 +122,8 @@ package UserPkg is
   constant BOOT_PROM_INDEX_C     : natural := 9;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, x"0000_0000", 22, 18);
-  
-  
+
+
      -- Array
 
      constant PS_REB_TOTAL_C     : natural := PS5_AXI_INDEX_C - PS0_AXI_INDEX_C + 1;
@@ -216,6 +216,7 @@ type RegFileInType is record
          REB_config_done : slv(5 downto 0);
          GA              : slv(4 downto 0);
          TestIn          : slv(7 downto 0);
+		 alertCleared    : slv(5 downto 0);
          tempI2cIn       : i2c_in_type;
          fp_I2cIn        : i2c_in_type;
          serIDin         : sl;
@@ -231,6 +232,7 @@ type RegFileInType is record
       REB_config_done => (Others => '0'),
       GA        => (Others => '0'),
       TestIn    => (Others => '0'),
+	  alertCleared    => (Others => '0'),
       tempI2cIn => ('0','0'),
       fp_I2cIn  => ('0','0'),
       serIDin   => '0',
@@ -258,6 +260,7 @@ type RegFileOutType is record
          fpgaReload      : sl;
          masterReset     : sl;
          I2C_RESET_CNTL  : sl;
+         retryOnFail     : slv(2 downto 0);
       end record RegFileOutType;
 
      constant REGFILEOUT_C : RegFileOutType := (
@@ -275,7 +278,8 @@ type RegFileOutType is record
      fp_I2cOut  => ('0','0','0','0','0'),
      fpgaReload => '0',
      masterReset => '0',
-     I2C_RESET_CNTL => '0');
+     I2C_RESET_CNTL => '0',
+     retryOnFail => "001");
 
 --type Reg2SeqType is record
 --         MeasStatus       : slv(127 downto 0);

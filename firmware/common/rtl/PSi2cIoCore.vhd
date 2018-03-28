@@ -39,6 +39,10 @@ entity PSi2cIoCore is
       axiRst : in sl;
 
       REB_on : in sl;
+--	  alertCleared : out sl;
+	  clearAlert   : in  sl;
+	  sequenceDone : in  sl;
+--	  alertCldAck  : in  sl;
 	  selectCR : in sl := '0';
 	  unlockFilt : in sl := '1';
 --      Aq_period : slv(31 downto 0) := X"09502F90";
@@ -383,6 +387,10 @@ begin
 		 
          REB_on          => REB_on,
          selectCR        => selectCR,
+--		 alertCleared    => alertCleared,
+	     clearAlert      => clearAlert,
+		 sequenceDone    => sequenceDone,
+--		 alertCldAck     => alertCldAck,
 
          sAxiReadMaster  => mAxiReadMasters(AXI_PS_READOUT_INDEX_C),
          sAxiReadSlave   => mAxiReadSlaves(AXI_PS_READOUT_INDEX_C),

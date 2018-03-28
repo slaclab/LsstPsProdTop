@@ -43,6 +43,10 @@ entity PowerMonitorSeqPS is
       axiRst : in sl;
 	  
 	  selectCR : in sl;
+--	  alertCleared : out sl;
+	  clearAlert   : in  sl;
+	  sequenceDone : in  sl;
+--	  alertCldAck  : in  sl;
 
 	  ps_sr_addresses       : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
 	  ps_sr_data            : in Slv32Array(MAX_ENTRY_C-1 downto 0) := (Others => (Others => '0'));
@@ -71,7 +75,10 @@ architecture rtl of PowerMonitorSeqPS is
       R_WAIT_S,
       F_START_S,
       F_WAIT_S,
-      CHECK_OPER_S	  ); 
+      CHECK_OPER_S,
+      POWERING_FE,
+      FF_START_S,
+      FF_WAIT_S	  ); 
 
    type RegType is record
       cnt   : natural range 0 to PS_REG_READ_LENGTH_C;
@@ -80,6 +87,7 @@ architecture rtl of PowerMonitorSeqPS is
 	  fail  : sl;
 	  initDone : sl;
 	  ps_on  : sl;
+--	  alertCleared  : sl;
 	  status : slv(1 downto 0);
 	  ps_addresses : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
 	  ps_data : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
@@ -96,6 +104,7 @@ architecture rtl of PowerMonitorSeqPS is
 	  fail  => '0',
 	  initDone  => '0',
 	  ps_on  => '0',
+--	  alertCleared  => '0',
 	  ps_addresses => (Others => (Others => '0')),
 	  ps_data => (Others => (Others => '0')),
 	  status => (others => '0'),
@@ -129,6 +138,9 @@ begin
          axilReadSlave   => mAxilReadSlave);  
 
    comb : process (ack, axiRst, SeqCntlIn, ps_cr_add_data, ps_cr_add_addresses,
+                  sequenceDone, 
+				  --alertCldAck,
+				  clearAlert,
                   ps_cr_data, ps_cr_addresses, ps_sr_data, ps_sr_addresses, selectCR, r) is
       variable v : RegType;
       variable i : natural;
@@ -225,6 +237,7 @@ begin
          when IDLE_S =>
             -- Wait for DONE to set
 			v.stV   := "0001";
+--			v.alertCleared := '0';
 			if (SeqCntlIn.Ps_On = '0') then
 			   v.cnt   := 0;
 			   v.f_cnt := 0;
@@ -362,12 +375,62 @@ begin
 			   v.fail  := '0';
 			   v.initDone := '1';
 			   -- Next state
-               v.state        := IDLE_S;
-            else
+               v.state        := POWERING_FE;
+			   
+            else 
                v.f_cnt := r.f_cnt + 1;
 			   v.status := (others => '0');  -- to clear for new try
 			   -- Next state
                v.state        := W_START_S;	  
+            end if;
+      ----------------------------------------------------------------------
+         when POWERING_FE =>
+		 v.stV   := "1001";
+            -- Increment the counter
+            if (SeqCntlIn.Ps_On = '0') then
+			   v.state        := IDLE_S;
+			elsif (sequenceDone = '1') then
+			   -- Next state
+               v.state        := IDLE_S;
+--			elsif (alertCldAck = '1') then
+--			   v.alertCleared := '0';	
+            elsif (clearAlert = '1') then
+			   -- Next state
+			   v.cnt := 0;
+--			   v.alertCleared := '0';
+               v.state        := FF_START_S;	  
+            end if;
+      ----------------------------------------------------------------------
+         when FF_START_S =>   -- Fault state to clear latched fault during power up
+		    v.stV   := "1010";
+            -- Increment the counter
+            if (SeqCntlIn.Ps_On = '0') then
+			   v.state        := IDLE_S;
+			elsif (r.cnt = (1)) then  -- read once 
+                v.cnt := 0;
+--				v.alertCleared := '1';
+			    v.state        := POWERING_FE;				
+            elsif(ack.done = '0') then
+               v.cnt := r.cnt + 1;
+			   v.req.request  := '1';
+               v.req.rnw      := '1';   -- Read operation
+               v.req.address  := x"00000010"; -- to read address 4 to enable proper operation 
+			   -- Next state
+               v.state        := FF_WAIT_S;
+            end if;
+	  
+         ----------------------------------------------------------------------
+         when FF_WAIT_S =>
+		     v.stV   := "1011";
+            -- Wait for DONE to set
+            if (SeqCntlIn.Ps_On = '0') then
+			   v.state        := IDLE_S;
+			elsif ack.done = '1' then
+               -- Reset the flag
+               v.req.request        := '0';
+               v.status             := ack.resp OR r.status;
+               -- Next state
+               v.state       := FF_START_S;
             end if;
       ----------------------------------------------------------------------
       end case;
@@ -385,6 +448,7 @@ begin
       ----------------------------------------------------------------------------------------------
       SeqCntlOut.fail  <= r.fail;
 	  SeqCntlOut.initDone  <= r.initDone;
+--	  alertCleared  <= r.alertCleared;
 	  SeqCntlOut.stV  <= r.inSlv(4)(7 downto 0) & r.inSlv(3)(7 downto 0) & r.inSlv(2)(7 downto 0) & r.inSlv(1)(7 downto 0) & 
 	                     r.inSlv(0)(7 downto 0) & r.fail & r.initDone & r.status & '0' & r.valid & toSlv(r.cnt,4) & r.stV;
       
