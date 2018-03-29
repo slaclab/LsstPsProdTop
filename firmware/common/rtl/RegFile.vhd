@@ -157,7 +157,7 @@ architecture rtl of RegFile is
       sync_DCDC     => (others => '0'),
       LED_on        => (others => '0'),
 	  unlockSeting  => (others => '0'),
-	  retryOnFail    => "001",   -- one default retry
+	  retryOnFail    => "011",   -- 3 default retry
 	  unlockPsOn    => (others => '0'),
 	  unlockFilt    => (others => '0'),
 	  unlockManual  => (others => '0'),
