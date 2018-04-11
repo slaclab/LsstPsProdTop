@@ -19,7 +19,7 @@
 
 import rogue
 import pyrogue
-import pyrogue.simulation
+import pyrogue.interfaces.simulation
 import pyrogue.protocols
 import LsstPsProdTop as board
   
@@ -37,7 +37,7 @@ class Top(pyrogue.Device):
         if (hwEmu):
             # Create emulated hardware interface
             print ("Running in Hardware Emulation Mode:")
-            srp = pyrogue.simulation.MemEmulate()
+            srp = pyrogue.interfaces.simulation.MemEmulate()
             
         else:        
             # Create srp interface
