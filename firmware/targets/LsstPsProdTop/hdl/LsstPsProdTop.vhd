@@ -170,7 +170,7 @@ begin
          axilWriteSlaves  => axilWriteSlaves,
          -- Misc.
          extRstL          => extRstL,
-         ethLinkUp        => ethLinkUp(0),
+         ethLinkUp        => ethLinkUp,
          heartBeat        => heartBeat,
          efuse            => efuse,
          dnaValue         => dnaValue,
