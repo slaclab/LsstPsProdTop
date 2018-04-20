@@ -67,9 +67,9 @@ entity LsstPsProdTop is
       SDA_ADC     : inout slv(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
       SCL_ADC     : inout slv(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
       -- Boot Memory Ports
-      bootCsL     : out   sl;
-      bootMosi    : out   sl;
-      bootMiso    : in    sl;
+--      bootCsL     : out   sl;
+--      bootMosi    : out   sl;
+--      bootMiso    : in    sl;
       -- 1GbE Ports
       ethClkP     : in    sl;
       ethClkN     : in    sl;
@@ -105,7 +105,7 @@ architecture top_level of LsstPsProdTop is
    signal RegFileOut : RegFileOutType;
 
    signal heartBeat : sl;
-   signal ethLinkUp : sl;
+   signal ethLinkUp : slv(0 downto 0);
 
    signal rebOnOff     : slv(5 downto 0);
    signal rebOnOff_add : slv(5 downto 0);
@@ -170,7 +170,7 @@ begin
          axilWriteSlaves  => axilWriteSlaves,
          -- Misc.
          extRstL          => extRstL,
-         ethLinkUp        => ethLinkUp,
+         ethLinkUp        => ethLinkUp(0),
          heartBeat        => heartBeat,
          efuse            => efuse,
          dnaValue         => dnaValue,
@@ -178,9 +178,9 @@ begin
          vPIn             => vPIn,
          vNIn             => vNIn,
          -- Boot Memory Ports
-         bootCsL          => bootCsL,
-         bootMosi         => bootMosi,
-         bootMiso         => bootMiso,
+--         bootCsL          => bootCsL,
+--         bootMosi         => bootMosi,
+--         bootMiso         => bootMiso,
          -- 1GbE Interface
          ethClkP          => ethClkP,
          ethClkN          => ethClkN,
@@ -381,7 +381,7 @@ begin
    led(2) <= (heartBeat and not(axilRst)) or
              (initDone(5) and initDone(4) and initDone(3) and initDone(2)
               and initDone(1) and initDone(0));
-   led(1) <= ethLinkUp and not(axilRst);  --
+   led(1) <= ethLinkUp(0) and not(axilRst);  --
    led(0) <= (axilRst) or ((powerFailure(0) or powerFailure(1) or powerFailure(2) or
                             powerFailure(3) or powerFailure(4) or powerFailure(5)) and heartBeat);
 
