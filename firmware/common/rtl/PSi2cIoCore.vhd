@@ -256,8 +256,7 @@ begin
       generic map (
          TPD_G              => TPD_G,
          FILTER_SIZE_G      => 1,
-         FILTER_ADDR_G      => PS_FULL_ADDR_FILT_ARRAY_C(i),
-         AXI_ERROR_RESP_G   => AXI_RESP_DECERR_C)
+         FILTER_ADDR_G      => PS_FULL_ADDR_FILT_ARRAY_C(i))
       port map (
          axilClk             => axiClk,
          axilRst             => axiRst,
