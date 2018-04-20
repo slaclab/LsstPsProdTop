@@ -73,10 +73,10 @@ entity LsstPsProdTop is
       -- 1GbE Ports
       ethClkP     : in    sl;
       ethClkN     : in    sl;
-      ethRxP      : in    sl;
-      ethRxN      : in    sl;
-      ethTxP      : out   sl;
-      ethTxN      : out   sl;
+      ethRxP      : in    slv(0 downto 0);
+      ethRxN      : in    slv(0 downto 0);
+      ethTxP      : out   slv(0 downto 0);
+      ethTxN      : out   slv(0 downto 0);
       -- Misc.
       extRstL     : in    sl;
       -- XADC Ports

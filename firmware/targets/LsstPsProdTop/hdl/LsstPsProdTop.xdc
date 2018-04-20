@@ -15,7 +15,7 @@
 
 # I/O Port Mapping
 
-set_property PACKAGE_PIN A8 [get_ports ethRxN]
+set_property PACKAGE_PIN A8 [get_ports ethRxN[0]]
 
 set_property PACKAGE_PIN E6 [get_ports ethClkN]
 
