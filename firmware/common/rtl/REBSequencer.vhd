@@ -629,12 +629,12 @@ begin
 			   v.cntRetFail                    := (Others => '0');
 			   v.allRunning                      := '1';
                v.masterState                   := MONITORING_S;
-            elsif (dPhiOn = '1' and selectCR = '1')  then
+            elsif (dPhiOn = '1' and selectCR = '1' and  r.din(6) = '0')  then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
 			   v.din                           := "00100000" OR r.din; -- hv configured manually
                v.masterState                   := TURN_ON_PS4_S; 			   
-            elsif (hvOn = '0')  then
+            elsif (hvOn = '0' and r.din(7) = '0')  then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
 			   v.din                           := "01000000" OR r.din; -- hv configured manually
@@ -655,7 +655,7 @@ begin
 --			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;              --due to uncertanty of manual on start with HV                             
-            elsif (r.cnt = (Delay_period_last))  then
+            elsif (r.cnt = (Delay_period))  then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
 			   v.din                           := "00000100" OR r.din;
@@ -677,7 +677,7 @@ begin
 --			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;    
-            elsif (r.cnt = (Delay_period_last))  then
+            elsif (r.cnt = (Delay_period))  then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
 			   v.din                           := "01000000" OR r.din; -- hv configured manually
