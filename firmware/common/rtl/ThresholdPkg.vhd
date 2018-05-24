@@ -277,7 +277,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_28"),
 	                       (x"00_00_00_31", x"00_00_00_80"),
 						   (x"00_00_02_26", x"00_00_00_30"),  -- set reference DAC
-						   (x"00_00_02_a0", x"00_00_80_00"),  -- and zero it (middle scale)
+						   (x"00_00_02_a0", x"00_00_FF_F0"),  -- and zero it (min voltage -> max  scale)
                            (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
 	                       (x"00_00_00_31", x"00_00_00_80")); -- redundant to keep same size of arrays
   

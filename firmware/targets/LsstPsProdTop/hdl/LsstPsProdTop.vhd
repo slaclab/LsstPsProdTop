@@ -274,6 +274,7 @@ begin
             axiRst        => axilRst,
             rebOn         => RegFileOut.reb_on(i),  --
             hvOn          => RegFileOut.din(i*7 + 6),
+			dPhiOn        => RegFileOut.din(i*7 + 5),
 			retryOnFail   => RegFileOut.retryOnFail, 
 --	        alertCleared  => alertCleared(i),
 --			alertCleared_add  => alertCleared_add(i),

@@ -12,6 +12,7 @@
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 10/16/2017: created.
+--5/24/18 adding indepndent control for dPhi on
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 
@@ -44,6 +45,7 @@ entity REBSequencer is
 
 	  rebOn        : in  sl;
 	  hvOn         : in  sl;
+	  dPhiOn       : in  sl;
 	  retryOnFail  : in  slv(2 downto 0);
 --	  alertCleared : in  sl;
 --	  alertCleared_add : in  sl;
@@ -93,13 +95,18 @@ architecture rtl of REBSequencer is
 	 CLEAR_ALERT_PS2_S,
      TURN_ON_PS3_S,     -- Clk High
 	 CLEAR_ALERT_PS3_S,
-     TURN_ON_PS4_S,     -- dPhi
-	 CLEAR_ALERT_PS4_S,
+--     TURN_ON_PS4_S,     -- dPhi
+--	 CLEAR_ALERT_PS4_S,
      TURN_ON_PS5_S,     -- OD 
 	 CLEAR_ALERT_PS5_S,
 	 TURN_ON_PS6_S,     -- Heater 
 	 CLEAR_ALERT_PS6_S,
+     WAIT_FOR_CCS_ON,   -- CCS command wait for HV and CR dPhi
+--	 CLEAR_WAIT_FOR_CCS_ON,
+     TURN_ON_PS4_S,     -- dPhi
+--	 CLEAR_ALERT_PS4_S,
 	 TURN_ON_PS7_S,     -- Bias
+--	 CLEAR_ALERT_PS7_S,
 	 MONITORING_S,
      TURN_OFF_PS7_S,     -- Bias
      TURN_OFF_PS6_S,     -- Heater
@@ -186,7 +193,7 @@ begin
          dataOut  => alarmSynced);
    
  
-   comb : process (axiRst, rebOn, hvOn, initDone, initDone_temp, initFail_temp, initFail, initFail_add,
+   comb : process (axiRst, rebOn, hvOn, dPhiOn, initDone, initDone_temp, initFail_temp, initFail, initFail_add,
   --                 alertCleared, alertCleared_add, 
 				   retryOnFail, 
                    RegFileIn, initDone_add, initFailS, alarmSynced, selectCR, unlockPsOn, dout,  r ) is
@@ -418,8 +425,8 @@ begin
             elsif (r.cnt = (Delay_period))   then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
-			   v.din                           := "00100000" OR r.din;
-               v.masterState                   := TURN_ON_PS4_S;  
+			   v.din                           := "00000100" OR r.din;  --And now dPhi manual
+               v.masterState                   := TURN_ON_PS5_S;  
 			 else
 			   v.cnt := r.cnt + 1;
             end if;
@@ -443,51 +450,51 @@ begin
 			   v.cnt := r.cnt + 1;
             end if;
 			
-		when TURN_ON_PS4_S =>
-		    v.stV := "00110";
-            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
-			   v.cnt                             := 0;
-			   v.sequenceDone                    := '1';
-			   v.din                          := "11011111" AND r.din; --
-               v.masterState                   := TURN_OFF_PS4_S;
-            elsif ((r.powerFaultStart /=  "000000000000000000")  and (retryOnFail >  r.cntRetFail) )  then
-			   v.cnt                           := 0;
-			   v.cntRetFail                    := r.cntRetFail + '1';
-			   v.clearAlert                    := '1';
-               v.masterState                   := CLEAR_ALERT_PS4_S; 
-            elsif (r.powerFaultStart /=  "000000000000000000") then
-			   v.cnt                           := 0;
-			   v.powerFailure                    := '1';
-			   v.sequenceDone                    := '1';
-			   v.din                          := "11011111" AND r.din; --
-               v.masterState                   := TURN_OFF_PS4_S;                                          
-            elsif (r.cnt = (Delay_period))  then
-			   v.cnt                           := 0;
-			   v.cntRetFail                    := (Others => '0');
-			   v.din                           := "00000100" OR r.din;
-               v.masterState                   := TURN_ON_PS5_S;    
-			else
-			   v.cnt := r.cnt + 1;
-            end if;
+		-- when TURN_ON_PS4_S =>
+		    -- v.stV := "00110";
+            -- if (rebOn = '0' OR RegFileIn.enable_in = '0') then
+			   -- v.cnt                             := 0;
+			   -- v.sequenceDone                    := '1';
+			   -- v.din                          := "11011111" AND r.din; --
+               -- v.masterState                   := TURN_OFF_PS4_S;
+            -- elsif ((r.powerFaultStart /=  "000000000000000000")  and (retryOnFail >  r.cntRetFail) )  then
+			   -- v.cnt                           := 0;
+			   -- v.cntRetFail                    := r.cntRetFail + '1';
+			   -- v.clearAlert                    := '1';
+               -- v.masterState                   := CLEAR_ALERT_PS4_S; 
+            -- elsif (r.powerFaultStart /=  "000000000000000000") then
+			   -- v.cnt                           := 0;
+			   -- v.powerFailure                    := '1';
+			   -- v.sequenceDone                    := '1';
+			   -- v.din                          := "11011111" AND r.din; --
+               -- v.masterState                   := TURN_OFF_PS4_S;                                          
+            -- elsif (r.cnt = (Delay_period))  then
+			   -- v.cnt                           := 0;
+			   -- v.cntRetFail                    := (Others => '0');
+			   -- v.din                           := "00000100" OR r.din;
+               -- v.masterState                   := TURN_ON_PS5_S;    
+			-- else
+			   -- v.cnt := r.cnt + 1;
+            -- end if;
 
-		when CLEAR_ALERT_PS4_S =>
-		    v.stV := "11000";
-			v.clearAlert                    := '0';
-            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
-			   v.cnt                             := 0;
-			   v.sequenceDone                    := '1';
-			   v.din                          := "11011111" AND r.din; --
-               v.masterState                   := TURN_OFF_PS4_S;
-           elsif (r.powerFaultStart =  "000000000000000000")  then
-			   v.cnt                           := 0;
---			   v.alertCldAck                     := '1';
-               v.masterState                   := TURN_ON_PS4_S;                                          
-            elsif (r.cnt = (Delay_period_last)) then -- to keep SM going
-			   v.cnt                           := 0;
-               v.masterState                   := TURN_ON_PS4_S; 
-			else
-			   v.cnt := r.cnt + 1;
-            end if;
+		-- when CLEAR_ALERT_PS4_S =>
+		    -- v.stV := "11000";
+			-- v.clearAlert                    := '0';
+            -- if (rebOn = '0' OR RegFileIn.enable_in = '0') then
+			   -- v.cnt                             := 0;
+			   -- v.sequenceDone                    := '1';
+			   -- v.din                          := "11011111" AND r.din; --
+               -- v.masterState                   := TURN_OFF_PS4_S;
+           -- elsif (r.powerFaultStart =  "000000000000000000")  then
+			   -- v.cnt                           := 0;
+-- --			   v.alertCldAck                     := '1';
+               -- v.masterState                   := TURN_ON_PS4_S;                                          
+            -- elsif (r.cnt = (Delay_period_last)) then -- to keep SM going
+			   -- v.cnt                           := 0;
+               -- v.masterState                   := TURN_ON_PS4_S; 
+			-- else
+			   -- v.cnt := r.cnt + 1;
+            -- end if;
 			
 		when TURN_ON_PS5_S =>
 		    v.stV := "00111";
@@ -571,7 +578,7 @@ begin
 			   v.din                           := "00000000" OR r.din; -- hv configured manually
 			   v.configDone                      := '1';
 			   v.sequenceDone                    := '1';
-               v.masterState                   := TURN_ON_PS7_S;    
+               v.masterState                   := WAIT_FOR_CCS_ON;    
 			else
 			   v.cnt := r.cnt + 1;
             end if;
@@ -599,27 +606,86 @@ begin
 			   v.cnt := r.cnt + 1;
             end if;
 			
-			
-		when TURN_ON_PS7_S =>
-		    v.stV := "01001";
+		when WAIT_FOR_CCS_ON =>
+		    v.stV := "10100";
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+--			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;
             elsif (r.powerFaultStart /=  "000000000000000000") then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
+--			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
-               v.masterState                   := TURN_OFF_PS7_S;                                          
+               v.masterState                   := TURN_OFF_PS7_S; 
+            elsif (r.din =  "01111111" and selectCR = '0') then
+			   v.cnt                           := 0;
+			   v.cntRetFail                    := (Others => '0');
+			   v.allRunning                      := '1';
+               v.masterState                   := MONITORING_S;
+            elsif (r.din =  "11111111" and selectCR = '1') then
+			   v.cnt                           := 0;
+			   v.cntRetFail                    := (Others => '0');
+			   v.allRunning                      := '1';
+               v.masterState                   := MONITORING_S;
+            elsif (dPhiOn = '1' and selectCR = '1')  then
+			   v.cnt                           := 0;
+			   v.cntRetFail                    := (Others => '0');
+			   v.din                           := "00100000" OR r.din; -- hv configured manually
+               v.masterState                   := TURN_ON_PS4_S; 			   
             elsif (hvOn = '0')  then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
 			   v.din                           := "01000000" OR r.din; -- hv configured manually
-			   v.allRunning                      := '1';
-               v.masterState                   := MONITORING_S;    
+               v.masterState                   := TURN_ON_PS7_S;   			   
             end if;
+
 			
-			
+		when TURN_ON_PS4_S =>
+		    v.stV := "00110";
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
+			   v.cnt                             := 0;
+--			   v.sequenceDone                    := '1';
+			   v.din                           := "10111111" AND r.din; --
+               v.masterState                   := TURN_OFF_PS7_S;              --due to uncertanty of manual on start with HV        
+            elsif (r.powerFaultStart /=  "000000000000000000") then
+			   v.cnt                           := 0;
+			   v.powerFailure                    := '1';
+--			   v.sequenceDone                    := '1';
+			   v.din                           := "10111111" AND r.din; --
+               v.masterState                   := TURN_OFF_PS7_S;              --due to uncertanty of manual on start with HV                             
+            elsif (r.cnt = (Delay_period_last))  then
+			   v.cnt                           := 0;
+			   v.cntRetFail                    := (Others => '0');
+			   v.din                           := "00000100" OR r.din;
+               v.masterState                   := WAIT_FOR_CCS_ON;    
+			else
+			   v.cnt := r.cnt + 1;
+            end if;
+
+		when TURN_ON_PS7_S =>
+		    v.stV := "01001";
+            if (rebOn = '0' OR RegFileIn.enable_in = '0') then
+			   v.cnt                             := 0;
+--			   v.sequenceDone                    := '1';
+			   v.din                           := "10111111" AND r.din; --
+               v.masterState                   := TURN_OFF_PS7_S; 
+            elsif (r.powerFaultStart /=  "000000000000000000") then
+			   v.cnt                           := 0;
+			   v.powerFailure                    := '1';
+--			   v.sequenceDone                    := '1';
+			   v.din                           := "10111111" AND r.din; --
+               v.masterState                   := TURN_OFF_PS7_S;    
+            elsif (r.cnt = (Delay_period_last))  then
+			   v.cnt                           := 0;
+			   v.cntRetFail                    := (Others => '0');
+			   v.din                           := "01000000" OR r.din; -- hv configured manually
+               v.masterState                   := WAIT_FOR_CCS_ON;    
+			else
+			   v.cnt := r.cnt + 1; 
+            end if;
+						
 		when MONITORING_S =>
 		    v.stV := "01010";
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
@@ -755,8 +821,12 @@ begin
       rebOnOff      <= r.rebOnOff;
 	  rebOnOff_add  <= r.rebOnOff_add;
       configDone    <= r.configDone;
-	  allRunning    <= r.allRunning;	  
-	  din           <= r.din AND ('1' & NOT(hvOn)  & "111111") ;
+	  allRunning    <= r.allRunning;
+      if (selectCR = '1') then 
+          din           <= r.din AND ('1' & NOT(hvOn)  & dPhiOn & "11111") ;
+	  else
+          din           <= r.din AND ('1' & NOT(hvOn)  & "111111") ;
+	  end if;	  
 	  powerFailure  <= r.powerFailure;	 
       clearAlert   	<= r.clearAlert;  
 	  sequenceDone 	<= r.sequenceDone;
