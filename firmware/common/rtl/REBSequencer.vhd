@@ -629,12 +629,12 @@ begin
 			   v.cntRetFail                    := (Others => '0');
 			   v.allRunning                      := '1';
                v.masterState                   := MONITORING_S;
-            elsif (dPhiOn = '1' and selectCR = '1' and  r.din(6) = '0')  then
+            elsif (dPhiOn = '1' and selectCR = '1' and  r.din(5) = '0')  then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
 			   v.din                           := "00100000" OR r.din; -- hv configured manually
                v.masterState                   := TURN_ON_PS4_S; 			   
-            elsif (hvOn = '0' and r.din(7) = '0')  then
+            elsif (hvOn = '0' and r.din(6) = '0')  then
 			   v.cnt                           := 0;
 			   v.cntRetFail                    := (Others => '0');
 			   v.din                           := "01000000" OR r.din; -- hv configured manually
