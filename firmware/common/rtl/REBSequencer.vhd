@@ -196,7 +196,7 @@ begin
  
    comb : process (axiRst, rebOn, hvOn, dPhiOn, initDone, initDone_temp, initFail_temp, initFail, initFail_add,
   --                 alertCleared, alertCleared_add, 
-				   retryOnFail, 
+				   retryOnFail, unlockSeq,
                    RegFileIn, initDone_add, initFailS, alarmSynced, selectCR, unlockPsOn, dout,  r ) is
       variable v           : RegType;
       
