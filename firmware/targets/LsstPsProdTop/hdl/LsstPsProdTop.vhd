@@ -297,6 +297,7 @@ begin
             initFail_temp => RegFileOut.Tempfail,
             selectCR      => selectCR,
             unlockPsOn    => RegFileOut.unlockSeting(1),
+			unlockSeq     => RegFileOut.unlockSeting(2),
             din           => din_l(i*8 +7 downto i*8),
             dout          => dout_l(i*16 +15 downto i*16),
             temp_Alarm    => temp_Alarm,

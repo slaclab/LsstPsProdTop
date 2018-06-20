@@ -68,6 +68,7 @@ entity REBSequencer is
       initFail_temp : in  sl;
 	  selectCR     : in sl;
 	  unlockPsOn   : in sl;
+	  unlockSeq    : in sl;
       din          : out slv(7 downto 0);  -- Tere are no -1 due to special case for heaters under CR
       dout         : in  slv(15 downto 0);  -- same due to CR heater
 	  temp_Alarm   : in sl;
@@ -272,7 +273,7 @@ begin
 			   v.cntRetFail                    := r.cntRetFail + '1';
 			   v.clearAlert                    := '1';
                v.masterState                   := CLEAR_ALERT_PS0_S;    
-            elsif (r.powerFaultStart /=  "000000000000000000")  then
+            elsif (r.powerFaultStart /=  "000000000000000000" AND unlockSeq = '0')  then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.sequenceDone                    := '1';
@@ -295,7 +296,7 @@ begin
 			   v.sequenceDone                    := '1';
 			   v.din                          := "11111110" AND r.din; --
                v.masterState                   := TURN_OFF_PS0_S;
-            elsif (r.powerFaultStart =  "000000000000000000")  then
+            elsif (r.powerFaultStart =  "000000000000000000" )  then
 			   v.cnt                           := 0;
 --			   v.alertCldAck                     := '1';
                v.masterState                   := TURN_ON_PS0_S;                                          
@@ -319,7 +320,7 @@ begin
 			   v.cntRetFail                    := r.cntRetFail + '1';
 			   v.clearAlert                    := '1';
                v.masterState                   := CLEAR_ALERT_PS1_S;  
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.sequenceDone                    := '1';
@@ -366,7 +367,7 @@ begin
 			   v.cntRetFail                    := r.cntRetFail + '1';
 			   v.clearAlert                    := '1';
                v.masterState                   := CLEAR_ALERT_PS2_S; 
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.sequenceDone                    := '1';
@@ -412,7 +413,7 @@ begin
 			   v.cntRetFail                    := r.cntRetFail + '1';
 			   v.clearAlert                    := '1';
                v.masterState                   := CLEAR_ALERT_PS3_S; 
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.sequenceDone                    := '1';
@@ -508,7 +509,7 @@ begin
 			   v.cntRetFail                    := r.cntRetFail + '1';
 			   v.clearAlert                    := '1';
                v.masterState                   := CLEAR_ALERT_PS5_S; 
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.sequenceDone                    := '1';
@@ -562,7 +563,7 @@ begin
 			   v.cntRetFail                    := r.cntRetFail + '1';
 			   v.clearAlert                    := '1';
                v.masterState                   := CLEAR_ALERT_PS6_S; 
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.sequenceDone                    := '1';
@@ -613,7 +614,7 @@ begin
 --			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 --			   v.sequenceDone                    := '1';
@@ -649,7 +650,7 @@ begin
 --			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;              --due to uncertanty of manual on start with HV        
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 --			   v.sequenceDone                    := '1';
@@ -671,7 +672,7 @@ begin
 --			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S; 
-            elsif (r.powerFaultStart /=  "000000000000000000") then
+            elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 --			   v.sequenceDone                    := '1';
@@ -694,7 +695,7 @@ begin
 			   v.configDone                      := '0';
 			   v.allRunning                      := '0';
                v.masterState                   := TURN_OFF_PS7_S;
-            elsif (r.powerFault /=  "000000000000000000") then
+            elsif (r.powerFault /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
 			   v.powerFailure                    := '1';
 			   v.din                           := "10111111" AND r.din; --
