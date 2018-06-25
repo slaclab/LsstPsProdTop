@@ -208,6 +208,7 @@ begin
          psI2cOut     => psI2cOut,
          psI2cInMap   => psI2cInMap,
          psI2cOutMap  => psI2cOutMap,
+		 selectVerB   => efuse(1),
          selectCR     => selectCR);
 
    ----------
