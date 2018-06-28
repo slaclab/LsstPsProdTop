@@ -270,8 +270,8 @@ package ThresholdPkg is
 
    constant CR_DPHI_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
                            (x"00_00_00_01", x"00_00_00_23"),
-                           (x"00_00_00_1A", x"00_00_00_BA"),
-	                       (x"00_00_00_1B", x"00_00_00_E0"),
+                           (x"00_00_00_1A", x"00_00_00_E2"),  -- using measured correction (from 0xbaE)
+	                       (x"00_00_00_1B", x"00_00_00_70"),
                            (x"00_00_00_2E", x"00_00_00_7F"),
 	                       (x"00_00_00_2F", x"00_00_00_40"),
 	                       (x"00_00_00_30", x"00_00_00_28"),
