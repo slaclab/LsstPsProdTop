@@ -66,10 +66,6 @@ entity LsstPsProdTop is
       -- I2C lines to individual PS
       SDA_ADC     : inout slv(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
       SCL_ADC     : inout slv(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
-      -- Boot Memory Ports
---      bootCsL     : out   sl;
---      bootMosi    : out   sl;
---      bootMiso    : in    sl;
       -- 1GbE Ports
       ethClkP     : in    sl;
       ethClkN     : in    sl;
@@ -79,6 +75,12 @@ entity LsstPsProdTop is
       ethTxN      : out   slv(0 downto 0);
       -- Misc.
       extRstL     : in    sl;
+      -- Boot Memory Ports
+      bootCsL     : out sl;
+      bootMosi    : out sl;
+      bootMiso    : in  sl;
+      bootWpL     : out sl;
+      bootHdL     : out sl;      
       -- XADC Ports
       vPIn        : in    sl;
       vNIn        : in    sl);
@@ -178,9 +180,11 @@ begin
          vPIn             => vPIn,
          vNIn             => vNIn,
          -- Boot Memory Ports
---         bootCsL          => bootCsL,
---         bootMosi         => bootMosi,
---         bootMiso         => bootMiso,
+         bootCsL          => bootCsL,
+         bootMosi         => bootMosi,
+         bootMiso         => bootMiso,
+         bootWpL          => bootWpL,
+         bootHdL          => bootHdL,
          -- 1GbE Interface
          ethClkP          => ethClkP,
          ethClkN          => ethClkN,
