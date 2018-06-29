@@ -60,6 +60,7 @@ entity Mapping is
 	psI2cInMap : in  i2c_in_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
     psI2cOutMap : out i2c_out_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
 	  
+	selectVerB  : in  sl;
 	selectCR  : in  sl
 	
 );
@@ -70,7 +71,7 @@ architecture rtl of Mapping is
 
 begin
 
-   U_Mapping : process (dout0, dout1, dinMap, sync_DCDCMap, reb_onMap, psI2cInMap, psI2cOut,selectCR ) is
+   U_Mapping : process (dout0, dout1, dinMap, sync_DCDCMap, reb_onMap, psI2cInMap, psI2cOut,selectCR, selectVerB ) is
    
    begin
  -- REB 0-2
@@ -82,7 +83,7 @@ begin
 		  psI2cIn(20 downto 0)        <= psI2cInMap(20 downto 0);
 		  psI2cOutMap(20 downto 0)    <= psI2cOut(20 downto 0);
  -- REB 3
-        if (selectCR = '1')  then 
+        if (selectCR = '1' and selectVerB = '0')  then 
 		  dout0Map(27 downto 21)       <= dout0(27 downto 21);
 		  dout1Map(27 downto 21)       <= dout1(27 downto 21);
 		  din(27 downto 21)            <= dinMap(27 downto 21);
@@ -110,7 +111,7 @@ begin
 		  psI2cOutMap(34 downto 28)    <= psI2cOut(34 downto 28);
 		  
  -- REB 5	
-        if (selectCR = '1')  then  
+        if (selectCR = '1'  and selectVerB = '0')  then  
 		  dout0Map(41 downto 35)       <= dout0(41 downto 35);
 		  dout1Map(41 downto 35)       <= dout1(41 downto 35);
 		  din(41 downto 35)            <= dinMap(41 downto 35);
