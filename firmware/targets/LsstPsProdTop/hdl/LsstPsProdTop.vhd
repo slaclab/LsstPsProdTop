@@ -149,6 +149,10 @@ architecture top_level of LsstPsProdTop is
    
    signal psI2cInMap  : i2c_in_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
    signal psI2cOutMap : i2c_out_array(7 * (PS_REB_TOTAL_C - 1) + 6 downto 0);
+   
+   signal overrideEthCofig : sl               := '0';  -- '0' = uses LsstPwrCtrlEthConfig.vhd, '1' = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
+   signal overrideMacAddr  : slv(47 downto 0) := x"2E_48_00_56_00_08";  -- 08:00:56:00:48:2E
+   signal overrideIpAddr   : slv(31 downto 0) := x"2E_01_A8_C0";  -- 192.168.1.46   
 
    attribute dont_touch               : string;
    attribute dont_touch of RegFileOut : signal is "true";
@@ -176,6 +180,11 @@ begin
          heartBeat        => heartBeat,
          efuse            => efuse,
          dnaValue         => dnaValue,
+         -- Overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses Interface
+         overrideEthCofig => overrideEthCofig,
+         overrideMacAddr  => overrideMacAddr,      
+         overrideIpAddr   => overrideIpAddr,     
+
          -- XADC Ports
          vPIn             => vPIn,
          vNIn             => vNIn,
@@ -196,6 +205,15 @@ begin
    ------------
    -- Remapping
    ------------
+   -- Special case of remapping to fix Eprom error in single instance, it has dnaValue 0x0044ac2150f1085c
+   U_IpEfuseErrMap : process (dnaValue) is
+   begin
+        if (dnaValue = x"0044ac2150f1085c")  then  
+		  overrideEthCofig       <= '1';
+		end if;
+    end process U_IpEfuseErrMap;
+	
+	
    U_Map : entity work.Mapping
       port map (
          dout0        => dout0,
