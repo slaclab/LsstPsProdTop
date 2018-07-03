@@ -206,9 +206,9 @@ begin
    -- Remapping
    ------------
    -- Special case of remapping to fix Eprom error in single instance, it has dnaValue 0x0044ac2150f1085c
-   U_IpEfuseErrMap : process (dnaValue) is
+   U_IpEfuseErrMap : process (dnaValue, eFuse) is
    begin
-        if (dnaValue = x"0044ac2150f1085c")  then  
+        if ((dnaValue = x"0044ac2150f1085c") and (eFuse(31 downto 24) = X'2F"))  then  
 		  overrideEthCofig       <= '1';
 		end if;
     end process U_IpEfuseErrMap;
