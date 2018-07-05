@@ -210,6 +210,8 @@ begin
    begin
         if ((dnaValue(63 downto 0) = x"0044ac2150f1085c") and (eFuse(31 downto 24) = X"2F"))  then  
 		   overrideEthCofig       <= '1';
+		else
+		   overrideEthCofig       <= '0';
 		end if;
     end process U_IpEfuseErrMap;
 	
