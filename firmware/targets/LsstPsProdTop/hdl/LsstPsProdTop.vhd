@@ -13,8 +13,6 @@
 -------------------------------------------------------------------------------
 -- File       : LsstPsProdTop.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-04-20
--- Last update: 2018-02-13
 -------------------------------------------------------------------------------
 -- Description: Firmware Target's Top Level
 -------------------------------------------------------------------------------
@@ -30,10 +28,14 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.I2cPkg.all;
+
 use work.UserPkg.all;
-use work.I2cPkg.all;
+
+library lsst_pwr_ctrl_core;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -162,7 +164,7 @@ begin
    ---------------------
    -- Common Core Module
    ---------------------
-   U_Core : entity work.LsstPwrCtrlCore
+   U_Core : entity lsst_pwr_ctrl_core.LsstPwrCtrlCore
       generic map (
          TPD_G        => TPD_G,
          BUILD_INFO_G => BUILD_INFO_G)

@@ -18,11 +18,13 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.I2cPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.I2cPkg.all;
+use surf.SsiPkg.all;
+
 use work.UserPkg.all;
 use work.ThresholdPkg.all;
 
@@ -231,7 +233,7 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Crossbar connecting all internal components
    -------------------------------------------------------------------------------------------------
-   PsAxiCrossbar : entity work.AxiLiteCrossbar
+   PsAxiCrossbar : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -252,7 +254,7 @@ begin
   blockFilt <= "00" & unlockFilt & unlockFilt & unlockFilt & unlockFilt & unlockFilt;		  
 
   PS_filt_intf: for i in  6 downto 0 generate
-   PsAxiBusFilt : entity work.AxiLiteWriteFilter
+   PsAxiBusFilt : entity surf.AxiLiteWriteFilter
       generic map (
          TPD_G              => TPD_G,
          FILTER_SIZE_G      => 1,
@@ -274,7 +276,7 @@ begin
    -- Second is for new hybrids with ADS1115 ADC for temp and far end voltage monitoring
    ----------------------------------------------------------------------------------------------
    -- PS interfaces
-   I2cRegMasterAxiBridge_0 : entity work.I2cRegMasterAxiBridge
+   I2cRegMasterAxiBridge_0 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS013_CONFIG_C)
@@ -288,7 +290,7 @@ begin
          i2cRegMasterIn  => i2cRegMastersIn(0),
          i2cRegMasterOut => i2cRegMastersOut(0));
 
-   I2cRegMasterAxiBridge_1 : entity work.I2cRegMasterAxiBridge
+   I2cRegMasterAxiBridge_1 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS013_CONFIG_C)
@@ -302,7 +304,7 @@ begin
          i2cRegMasterIn  => i2cRegMastersIn(1),
          i2cRegMasterOut => i2cRegMastersOut(1));
 
-   I2cRegMasterAxiBridge_2 : entity work.I2cRegMasterAxiBridge
+   I2cRegMasterAxiBridge_2 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS24_CONFIG_C)
@@ -316,7 +318,7 @@ begin
          i2cRegMasterIn  => i2cRegMastersIn(2),
          i2cRegMasterOut => i2cRegMastersOut(2));
 
-   I2cRegMasterAxiBridge_3 : entity work.I2cRegMasterAxiBridge
+   I2cRegMasterAxiBridge_3 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS013_CONFIG_C)
@@ -330,7 +332,7 @@ begin
          i2cRegMasterIn  => i2cRegMastersIn(3),
          i2cRegMasterOut => i2cRegMastersOut(3));
 
-   I2cRegMasterAxiBridge_4 : entity work.I2cRegMasterAxiBridge
+   I2cRegMasterAxiBridge_4 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS24_CONFIG_C)
@@ -344,7 +346,7 @@ begin
          i2cRegMasterIn  => i2cRegMastersIn(4),
          i2cRegMasterOut => i2cRegMastersOut(4));
 
-   I2cRegMasterAxiBridge_5 : entity work.I2cRegMasterAxiBridge
+   I2cRegMasterAxiBridge_5 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS5_CONFIG_C)
@@ -358,7 +360,7 @@ begin
          i2cRegMasterIn  => i2cRegMastersIn(5),
          i2cRegMasterOut => i2cRegMastersOut(5));
 
-   I2cRegMasterAxiBridge_6 : entity work.I2cRegMasterAxiBridge
+   I2cRegMasterAxiBridge_6 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS6_CONFIG_C)
@@ -409,7 +411,7 @@ begin
    ------------------------------------------------------------------------------
    -- Unused AXI-Lite buses must be terminated to prevent hanging the bus forever
    ------------------------------------------------------------------------------
-   -- U_AxiLiteEmpty : entity work.AxiLiteEmpty
+   -- U_AxiLiteEmpty : entity surf.AxiLiteEmpty
       -- generic map (
          -- TPD_G => TPD_G)
       -- port map (
@@ -424,7 +426,7 @@ begin
       -- mAxiWSeqMasters(i) <= AXI_LITE_WRITE_MASTER_INIT_C;
    -- end generate Init_mAxiWSeqMasters;
    
-   I2cSeqMasterAxiBridge : entity work.I2cRegMasterAxiBridge
+   I2cSeqMasterAxiBridge : entity surf.I2cRegMasterAxiBridge
 	  generic map (
 		 TPD_G               => TPD_G,
 		 DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS013_CONFIG_C)
@@ -438,7 +440,7 @@ begin
 		 i2cRegMasterIn  => i2cSeqMastersIn(0),
 		 i2cRegMasterOut => i2cSeqMastersOut(0));
 	
-   I2cSeqMasterAxiBridge_1 : entity work.I2cRegMasterAxiBridge
+   I2cSeqMasterAxiBridge_1 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS013_CONFIG_C)
@@ -452,7 +454,7 @@ begin
          i2cRegMasterIn  => i2cSeqMastersIn(1),
          i2cRegMasterOut => i2cSeqMastersOut(1));
 
-   I2cSeqMasterAxiBridge_2 : entity work.I2cRegMasterAxiBridge
+   I2cSeqMasterAxiBridge_2 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS24_CONFIG_C)
@@ -466,7 +468,7 @@ begin
          i2cRegMasterIn  => i2cSeqMastersIn(2),
          i2cRegMasterOut => i2cSeqMastersOut(2));
 
-   I2cSeqMasterAxiBridge_3 : entity work.I2cRegMasterAxiBridge
+   I2cSeqMasterAxiBridge_3 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS013_CONFIG_C)
@@ -480,7 +482,7 @@ begin
          i2cRegMasterIn  => i2cSeqMastersIn(3),
          i2cRegMasterOut => i2cSeqMastersOut(3));
 
-   I2cSeqMasterAxiBridge_4 : entity work.I2cRegMasterAxiBridge
+   I2cSeqMasterAxiBridge_4 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS24_CONFIG_C)
@@ -494,7 +496,7 @@ begin
          i2cRegMasterIn  => i2cSeqMastersIn(4),
          i2cRegMasterOut => i2cSeqMastersOut(4));
 
-   I2cSeqMasterAxiBridge_5 : entity work.I2cRegMasterAxiBridge
+   I2cSeqMasterAxiBridge_5 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS5_CONFIG_C)
@@ -508,7 +510,7 @@ begin
          i2cRegMasterIn  => i2cSeqMastersIn(5),
          i2cRegMasterOut => i2cSeqMastersOut(5));
 
-   I2cSeqMasterAxiBridge_6 : entity work.I2cRegMasterAxiBridge
+   I2cSeqMasterAxiBridge_6 : entity surf.I2cRegMasterAxiBridge
       generic map (
          TPD_G               => TPD_G,
          DEVICE_MAP_G        => AXI_I2C_BRIDGE_PS6_CONFIG_C)
@@ -549,7 +551,7 @@ begin
          i2ci   => psI2cIn(i),
          i2co   => psI2cOut(i));
    
-      -- I2cRegMaster_1 : entity work.I2cRegMaster
+      -- I2cRegMaster_1 : entity surf.I2cRegMaster
       -- generic map (
          -- TPD_G        => TPD_G,
          -- OUTPUT_EN_POLARITY_G => 0,

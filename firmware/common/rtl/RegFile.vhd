@@ -20,14 +20,16 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
---use work.Version.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.I2cPkg.all;
+
 use work.UserPkg.all;
-use work.I2cPkg.all;
 use work.ThresholdPkg.all;
 
---use work.TextUtilPkg.all;
+--use surf.TextUtilPkg.all;
 
 entity RegFile is
    generic (
@@ -208,7 +210,7 @@ begin
    dnaValid <= '1';
 
    GEN_DS2411 : if (EN_DS2411_G) generate
-      DS2411Core_1 : entity work.DS2411Core
+      DS2411Core_1 : entity surf.DS2411Core
          generic map (
             TPD_G        => TPD_G,
             CLK_PERIOD_G => CLK_PERIOD_G)
@@ -1440,7 +1442,7 @@ begin
    end process seq;
 
    -- masterReset output needs asynchronous reset and this is the easiest way to do it
-   Synchronizer_1 : entity work.Synchronizer
+   Synchronizer_1 : entity surf.Synchronizer
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
@@ -1454,7 +1456,7 @@ begin
          dataIn  => r.masterReset,
          dataOut => masterReset);
 
-   i2cRegMaster_TempSensor : entity work.i2cRegMaster
+   i2cRegMaster_TempSensor : entity surf.i2cRegMaster
       generic map (
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => 0,
