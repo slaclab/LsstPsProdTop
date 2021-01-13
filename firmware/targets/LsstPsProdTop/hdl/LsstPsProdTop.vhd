@@ -35,6 +35,8 @@ use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
 use surf.I2cPkg.all;
 
+library lsst_pwr_ctrl_core;
+
 use work.UserPkg.all;
 
 library unisim;
@@ -164,7 +166,7 @@ begin
    ---------------------
    -- Common Core Module
    ---------------------
-   U_Core : entity work.LsstPwrCtrlCore
+   U_Core : entity lsst_pwr_ctrl_core.LsstPwrCtrlCore
       generic map (
          TPD_G        => TPD_G,
          BUILD_INFO_G => BUILD_INFO_G)
