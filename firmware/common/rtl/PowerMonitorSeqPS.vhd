@@ -19,11 +19,13 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.AxiLiteMasterPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+--use surf.AxiLiteMasterPkg.all;
+
 
 use work.UserPkg.all;
 use work.ThresholdPkg.all;
@@ -93,7 +95,7 @@ architecture rtl of PowerMonitorSeqPS is
 	  ps_data : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
       valid : slv(PS_REG_READ_LENGTH_C-1 downto 0);
       inSlv : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
-      req   : AxiLiteMasterReqType;
+      req   : AxiLiteReqType;
       state : StateType;
    end record;
 
@@ -110,21 +112,21 @@ architecture rtl of PowerMonitorSeqPS is
 	  status => (others => '0'),
       valid => (others => '0'),
       inSlv => (others => (others => '0')),
-      req   => AXI_LITE_MASTER_REQ_INIT_C,
+      req   => AXI_LITE_REQ_INIT_C,
       state => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
    signal inSlv : Slv32Array(PS_REG_READ_LENGTH_C-1 downto 0);
-   signal ack   : AxiLiteMasterAckType;
+   signal ack   : AxiLiteAckType;
    constant  ONEVECT : slv(MAX_ENTRY_C-1 downto 0) := (Others => '1');
    
 
 begin
 
 	
-    U_AxiLiteMaster : entity work.AxiLiteMaster
+    U_AxiLiteMaster : entity surf.AxiLiteMaster
       generic map (
          TPD_G => TPD_G)
       port map (

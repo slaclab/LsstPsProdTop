@@ -17,8 +17,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 package ThresholdPkg is
 
@@ -45,8 +46,8 @@ package ThresholdPkg is
       Data              : slv(31 downto 0);
    end record;
    
-   type Ltc2945Config is array (natural range<>) of Ltc2945Entry;
-   type Ltc2945Reb is array (natural range<>) of Ltc2945Config;
+   --type Ltc2945Config is array  (0 to MAX_ENTRY_C-1) of Ltc2945Entry;
+   --type Ltc2945Reb is array (natural range<>) of Ltc2945Config;
    
    constant NUM_SR_PS_C : natural := 7;
    constant NUM_CR_PS_C : natural := 7;
@@ -62,6 +63,9 @@ package ThresholdPkg is
    constant BIAS_ENTRY_C         : natural := 5;
    constant DPHI_ENTRY_C         : natural := 7;
    constant MAX_ENTRY_C          : natural := CLK_LOW_ENTRY_C;
+
+   type Ltc2945Config is array  (0 to MAX_ENTRY_C-1) of Ltc2945Entry;
+   --type Ltc2945Reb is array (natural range<>) of Ltc2945Config;
    
 --   constant PS_CONFIG_ADDRESS_C      : Slv32VectorArray((NUM_MAX_PS_C downto 0)(MAX_ENTRY_C downto 0))  := (Others => (Others => (Others => '0')));
 --   constant PS_CONFIG_DATA_C      : Slv32VectorArray((NUM_MAX_PS_C do wnto 0)(MAX_ENTRY_C downto 0)) := (Others => (Others => (Others => '0')));
@@ -96,7 +100,7 @@ package ThresholdPkg is
 			 
 -- SR START   
 
-   constant SR_DIGITAL_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant SR_DIGITAL_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_92"),
 	                       (x"00_00_00_1B", x"00_00_00_A0"),
@@ -109,7 +113,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_58"),
 	                       (x"00_00_00_31", x"00_00_00_00"));
 	  
-   constant SR_ANALOG_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant SR_ANALOG_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_DB"),
 	                       (x"00_00_00_1B", x"00_00_00_F0"),
@@ -122,7 +126,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_7A"),
 	                       (x"00_00_00_31", x"00_00_00_F0"));
 
-   constant SR_OD_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant SR_OD_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_ED"),
 	                       (x"00_00_00_1B", x"00_00_00_30"),
@@ -135,7 +139,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_63"),
 	                       (x"00_00_00_31", x"00_00_00_80"));
 
-   constant SR_CLKHIGH_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant SR_CLKHIGH_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_EA"),   -- diviation due to tripping at max load at some channels
 	                       (x"00_00_00_1B", x"00_00_00_00"),
@@ -148,7 +152,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_7C"),
 	                       (x"00_00_00_31", x"00_00_00_70"));
 
-   constant SR_CLKLOW_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant SR_CLKLOW_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_2F"),
                            (x"00_00_00_1A", x"00_00_00_E0"),
 	                       (x"00_00_00_1B", x"00_00_00_40"),
@@ -161,7 +165,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_26", x"00_00_00_1C"),
 	                       (x"00_00_00_27", x"00_00_00_B0"));
 						   
-   constant SR_HEATER_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant SR_HEATER_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_E0"),
 	                       (x"00_00_00_1B", x"00_00_00_40"),
@@ -174,7 +178,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_5E"),
 	                       (x"00_00_00_31", x"00_00_00_00"));
 	  
-   constant SR_BIAS_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant SR_BIAS_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_28"),
                            (x"00_00_00_1A", x"00_00_00_98"),
 	                       (x"00_00_00_1B", x"00_00_00_C0"),
@@ -187,7 +191,8 @@ package ThresholdPkg is
 	                       (x"00_00_00_31", x"00_00_00_F0"),
 	                       (x"00_00_00_27", x"00_00_00_00"));
    
-  
+ 
+   type Ltc2945Reb is array (natural range<>) of Ltc2945Config;
    constant SR_PS_THRESHOLD_C : Ltc2945Reb(0 to NUM_SR_PS_C-1):= (
              SR_DIGITAL_THRESHOLD_C,
              SR_ANALOG_THRESHOLD_C,
@@ -203,7 +208,7 @@ package ThresholdPkg is
 
 -- CR Start 
 
-   constant CR_DIGITAL_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_DIGITAL_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_92"),
 	                       (x"00_00_00_1B", x"00_00_00_A0"),
@@ -216,7 +221,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_58"),
 	                       (x"00_00_00_31", x"00_00_00_00"));  
 	  
-   constant CR_ANALOG_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_ANALOG_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_DB"),
 	                       (x"00_00_00_1B", x"00_00_00_F0"),
@@ -229,7 +234,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_7A"),
 	                       (x"00_00_00_31", x"00_00_00_F0"));
 
-   constant CR_OD_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_OD_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_ED"),
 	                       (x"00_00_00_1B", x"00_00_00_30"),
@@ -242,7 +247,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_57"),
 	                       (x"00_00_00_31", x"00_00_00_60"));
 
-   constant CR_CLKHIGH_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_CLKHIGH_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_5D"),
 	                       (x"00_00_00_1B", x"00_00_00_70"),
@@ -255,7 +260,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_30", x"00_00_00_62"),
 	                       (x"00_00_00_31", x"00_00_00_80"));
 
-   constant CR_CLKLOW_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_CLKLOW_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_2F"),
                            (x"00_00_00_1A", x"00_00_00_8C"),
 	                       (x"00_00_00_1B", x"00_00_00_00"),
@@ -268,7 +273,7 @@ package ThresholdPkg is
 	                       (x"00_00_00_26", x"00_00_00_1A"),
 						   (x"00_00_00_27", x"00_00_00_00"));
 
-   constant CR_DPHI_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_DPHI_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_E2"),  -- using measured correction (from 0xbaE)
 	                       (x"00_00_00_1B", x"00_00_00_70"),
@@ -281,7 +286,7 @@ package ThresholdPkg is
                            (x"00_00_01_00", x"03_DA_DA_DA"), -- MAx ADC to 0x3DADADA   
 	                       (x"00_00_00_31", x"00_00_00_80")); -- redundant to keep same size of arrays
   
-   constant CR_BIAS_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_BIAS_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_28"),
                            (x"00_00_00_1A", x"00_00_00_98"),
 	                       (x"00_00_00_1B", x"00_00_00_C0"),
@@ -305,7 +310,7 @@ package ThresholdPkg is
              CR_BIAS_THRESHOLD_C);
 			 
 			 
-   constant CR_HEATER_THRESHOLD_C : Ltc2945Config(0 to MAX_ENTRY_C-1) := (
+   constant CR_HEATER_THRESHOLD_C : Ltc2945Config := (
                            (x"00_00_00_01", x"00_00_00_23"),
                            (x"00_00_00_1A", x"00_00_00_EE"),
 	                       (x"00_00_00_1B", x"00_00_00_D0"),

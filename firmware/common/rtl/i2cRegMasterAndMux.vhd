@@ -18,9 +18,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.I2cPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.I2cPkg.all;
+
 use work.UserPkg.all;
 
 entity I2cRegMasterAndMux is
@@ -54,7 +56,7 @@ architecture rtl of I2cRegMasterAndMux is
 begin
 
    -- Multiplexes 2 I2cRegMasterAxiBridges onto on I2cRegMaster
-   I2cRegMasterMux_1 : entity work.I2cRegMasterMux
+   I2cRegMasterMux_1 : entity surf.I2cRegMasterMux
       generic map (
          TPD_G        => TPD_G,
          NUM_INPUTS_C => NUM_INPUTS_C)
@@ -68,7 +70,7 @@ begin
          masterOut => i2cRegMasterOut);
 
    -- Finally, the I2cRegMaster
-   i2cRegMaster_HybridConfig : entity work.i2cRegMaster
+   i2cRegMaster_HybridConfig : entity surf.i2cRegMaster
       generic map (
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => OUTPUT_EN_POLARITY_G,

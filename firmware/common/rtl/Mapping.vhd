@@ -30,10 +30,12 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.I2cPkg.all;
+
 use work.UserPkg.all;
-use work.I2cPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;

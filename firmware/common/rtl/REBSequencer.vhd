@@ -21,10 +21,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 
 use work.UserPkg.all;
 use work.ThresholdPkg.all;
@@ -183,7 +184,7 @@ begin
    -------------------------------------------------------------------------------------------------
    alarmIn <= NOT(temp_Alarm) & dout(15 downto 14) & dout(12 downto 0);
    initFailS <= initFail_add OR initFail;
-   SynchronizerVector_0 : entity work.SynchronizerVector
+   SynchronizerVector_0 : entity surf.SynchronizerVector
       generic map (
          TPD_G                => TPD_G,
 		 WIDTH_G           => 16)
