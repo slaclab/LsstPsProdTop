@@ -11,6 +11,10 @@
 #######################
 ## Application Ports ##
 #######################
+#Tighten timing constrain from 8ns to 7ns to fix errors observed in IR2 during temperature transition 
+
+create_clock -name ethRefClk -period 7.000 [get_ports {ethClkP}]
+
 ## Switched REB0 and REB2 control due to layout change (connector gender change)
 
 # I/O Port Mapping
