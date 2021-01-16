@@ -536,7 +536,7 @@ begin
          TPD_G        => TPD_G,
          SIMULATION_G => SIMULATION_G,
          OUTPUT_EN_POLARITY_G => 0,
-         FILTER_G             => 8,
+         FILTER_G             => 80,
          PRESCALE_G           => 499, --249,
          NUM_INPUTS_C => 2)
       port map (
