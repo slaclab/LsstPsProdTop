@@ -158,10 +158,27 @@ architecture top_level of LsstPsProdTop is
    signal overrideMacAddr  : slv(47 downto 0) := x"2E_48_00_56_00_08";  -- 08:00:56:00:48:2E
    signal overrideIpAddr   : slv(31 downto 0) := x"2E_01_A8_C0";  -- 192.168.1.46   
 
+    signal enable_lcl     : sl;
+	
    attribute dont_touch               : string;
    attribute dont_touch of RegFileOut : signal is "true";
 
 begin
+   ---------------------
+   -- To debunce enable
+   ---------------------
+
+   U_enable : entity surf.Debouncer
+      generic map (
+         TPD_G             => TPD_G,
+		 FILTER_INIT_G     => X"FFFF";
+         INPUT_POLARITY_G  => '0',
+         OUTPUT_POLARITY_G => '0')
+      port map (
+         clk => axilClk,
+         i   => enable_in,
+         o   => enable_lcl);
+
 
    ---------------------
    -- Common Core Module
@@ -427,7 +444,7 @@ begin
    RegFileIn.dout0           <= dout0Map;
    RegFileIn.dout1           <= dout1Map;
    RegFileIn.REB_config_done <= (others => '1');  -- Unused for now , need for case if measuring IC need addtional configuration befere normal sequencing
-   RegFileIn.enable_in       <= not enable_in;    -- low true logic
+   RegFileIn.enable_in       <= not enable_lcl;    -- low true logic
    RegFileIn.spare_in        <= spare_in;
    RegFileIn.temp_Alarm      <= temp_Alarm;
    RegFileIn.fp_los          <= fp_los;
