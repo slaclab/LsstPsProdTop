@@ -171,7 +171,7 @@ begin
    U_enable : entity surf.Debouncer
       generic map (
          TPD_G             => TPD_G,
-		 FILTER_INIT_G     => X"FFFF";
+		 FILTER_INIT_G     => X"FFFF",
          INPUT_POLARITY_G  => '0',
          OUTPUT_POLARITY_G => '0')
       port map (
