@@ -73,7 +73,7 @@ entity REBSequencer is
       din          : out slv(7 downto 0);  -- Tere are no -1 due to special case for heaters under CR
       dout         : in  slv(15 downto 0);  -- same due to CR heater
 	  temp_Alarm   : in sl;
-	  Status       : out slv(31 downto 0);  -- 
+	  Status       : out slv(32 downto 0);  -- 
       powerFailure : out sl);
 
 end entity REBSequencer;
@@ -138,6 +138,7 @@ architecture rtl of REBSequencer is
 	  powerFailureD   : sl;
 	  configDone     : sl;
 	  allRunning     : sl;
+	  enable         : sl;
 	  powerFault     : slv(17 downto 0);
 	  powerFaultStart : slv(17 downto 0);
 	  cntRetFail      : slv(2 downto 0);
@@ -162,6 +163,7 @@ architecture rtl of REBSequencer is
 	  powerFailureD    => '0',
 	  configDone       => '0',
 	  allRunning       => '0',
+	  enable           => '0',
 	  powerFault       => (others => '0'),
 	  powerFaultStart  => (others => '0'),
 	  cntRetFail       => (others => '0'),
@@ -243,6 +245,7 @@ begin
 			   v.din                := (Others => '0');
 			   v.cnt                := 0;
 			   v.clearAlert         := '0';
+			   v.enable             := '0';
 			   v.cntRetFail         := (Others => '0');
                v.rebOnOff                      := '1';
                v.masterState                   := WAIT_CONFIG_S;
@@ -252,6 +255,9 @@ begin
 		    v.stV := "00001";
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
                v.masterState                   := WAIT_START_S;  
             elsif (r.initFail = '1') then
 			   v.powerFailure                  := '1';
@@ -267,6 +273,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                          := "11111110" AND r.din; --
                v.masterState                   := TURN_OFF_PS0_S;
             elsif ((r.powerFaultStart /=  "000000000000000000")  and (retryOnFail >  r.cntRetFail) )  then
@@ -295,6 +304,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                          := "11111110" AND r.din; --
                v.masterState                   := TURN_OFF_PS0_S;
             elsif (r.powerFaultStart =  "000000000000000000" )  then
@@ -314,6 +326,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                          := "11111101" AND r.din; --
                v.masterState                   := TURN_OFF_PS1_S;
             elsif ((r.powerFaultStart /=  "000000000000000000")  and (retryOnFail >  r.cntRetFail) )  then
@@ -342,6 +357,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                           := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                           := "11111101" AND r.din; --
                v.masterState                   := TURN_OFF_PS1_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -361,6 +379,9 @@ begin
             if (rebOn = '0'  OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                          := "11101111" AND r.din; --
                v.masterState                   := TURN_OFF_PS2_S;
             elsif ((r.powerFaultStart /=  "000000000000000000")  and (retryOnFail >  r.cntRetFail) )  then
@@ -389,6 +410,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                          := "11101111" AND r.din; --
                v.masterState                   := TURN_OFF_PS2_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -407,6 +431,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                          := "11110111" AND r.din; --
                v.masterState                   := TURN_OFF_PS3_S;
             elsif ((r.powerFaultStart /=  "000000000000000000")  and (retryOnFail >  r.cntRetFail) )  then
@@ -439,6 +466,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                          := "11110111" AND r.din; --
                v.masterState                   := TURN_OFF_PS3_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -503,6 +533,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                            := "11111011" AND r.din; --
 			   v.masterState                   := TURN_OFF_PS5_S;
             elsif ((r.powerFaultStart /=  "000000000000000000")  and (retryOnFail >  r.cntRetFail) )  then
@@ -535,6 +568,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   v.din                            := "11111011" AND r.din; --
 			   v.masterState                   := TURN_OFF_PS5_S;
             elsif (r.powerFaultStart =  "000000000000000000")  then
@@ -553,6 +589,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   if selectCR = '0' then
 			      v.din                          := "11011111" AND r.din; --
 			   else
@@ -591,6 +630,9 @@ begin
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
 			   v.sequenceDone                    := '1';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 			   if selectCR = '0' then
 			      v.din                          := "11011111" AND r.din; --
 			   else
@@ -612,7 +654,11 @@ begin
 		    v.stV := "10100";
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 --			   v.sequenceDone                    := '1';
+
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;
             elsif (r.powerFaultStart /=  "000000000000000000"  AND unlockSeq = '0') then
@@ -648,6 +694,9 @@ begin
 		    v.stV := "00110";
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 --			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S;              --due to uncertanty of manual on start with HV        
@@ -670,6 +719,9 @@ begin
 		    v.stV := "01001";
             if (rebOn = '0' OR RegFileIn.enable_in = '0') then
 			   v.cnt                             := 0;
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
 --			   v.sequenceDone                    := '1';
 			   v.din                           := "10111111" AND r.din; --
                v.masterState                   := TURN_OFF_PS7_S; 
@@ -695,6 +747,9 @@ begin
 			   v.din                           := "10111111" AND r.din; -- 
 			   v.configDone                      := '0';
 			   v.allRunning                      := '0';
+			   if(RegFileIn.enable_in = '0') then
+			      v.enable := '1';
+			   end if;
                v.masterState                   := TURN_OFF_PS7_S;
             elsif (r.powerFault /=  "000000000000000000"  AND unlockSeq = '0') then
 			   v.cnt                           := 0;
@@ -844,7 +899,7 @@ begin
 	  end if;	  
 	  
 	  Status(27 downto 23) <= r.stV;
-	  
+	  Status(32)  <=  r.enable;  -- to catch if off due to enale_in removal
 
    end process comb;
                    
@@ -856,7 +911,7 @@ begin
             Status(17 downto 0)  <= r.powerFault;
 		    Status(22 downto 18)  <= r.stV;
 		 elsif(r.rebOn = '1' and r.rebOn_d = '0') then  -- clear at restart
-		    Status(22 downto 0)  <= (Others => '0');
+		    Status(22 downto 0)  <= (Others => '0');	
          end if;
       end if;
    end process seq;

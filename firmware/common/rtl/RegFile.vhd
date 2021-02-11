@@ -57,7 +57,7 @@ entity RegFile is
 	  initDone     : in slv(5 downto 0);
 	  initFail     : in slv(5 downto 0);
 	  selectCR     : in sl;
-	  StatusSeq    : in slv32Array(5 downto 0);
+	  StatusSeq    : in slv33Array(5 downto 0);
 	  powerFailure : in slv(5 downto 0);
 	  din_out      : in slv(41 downto 0);
 	  reb_on_out   : in slv(5 downto 0);
@@ -469,21 +469,22 @@ begin
                      v.axiReadSlave.rdata := selectCR & '0' & allRunning & "00" & configDone &
 					                         "00" & initDone & "00" & initFail;
 				  when X"11" =>
-                     v.axiReadSlave.rdata := selectCR & not(RegFileIn.enable_in) & not(r.initDone) & '0' & x"00000" &
+                     v.axiReadSlave.rdata := selectCR & not(RegFileIn.enable_in) & not(r.initDone) & '0' & x"000" & "00" &
+					                       StatusSeq(5 downto 0)(32) &
 					                       r.fail & not(RegFileIn.temp_Alarm) & powerFailure;
 
 				 when X"12" =>
-				     v.axiReadSlave.rdata := StatusSeq(0);
+				     v.axiReadSlave.rdata := StatusSeq(0)(31 downto 0);
 				 when X"13" =>
-				     v.axiReadSlave.rdata := StatusSeq(1);
+				     v.axiReadSlave.rdata := StatusSeq(1)(31 downto 0);
 				 when X"14" =>
-				     v.axiReadSlave.rdata := StatusSeq(2);
+				     v.axiReadSlave.rdata := StatusSeq(2)(31 downto 0);
 				 when X"15" =>
-				     v.axiReadSlave.rdata := StatusSeq(3);
+				     v.axiReadSlave.rdata := StatusSeq(3)(31 downto 0);
 				 when X"16" =>
-				     v.axiReadSlave.rdata := StatusSeq(4);
+				     v.axiReadSlave.rdata := StatusSeq(4)(31 downto 0);
 				 when X"17" =>
-				     v.axiReadSlave.rdata := StatusSeq(5);
+				     v.axiReadSlave.rdata := StatusSeq(5)(31 downto 0);
 
 				 when X"20" =>
 				     v.axiReadSlave.rdata := r.unlockFilt;

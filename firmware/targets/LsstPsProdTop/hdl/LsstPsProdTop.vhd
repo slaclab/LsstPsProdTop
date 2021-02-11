@@ -128,7 +128,7 @@ architecture top_level of LsstPsProdTop is
    signal din_out      : slv(41 downto 0);
    signal dout_l       : slv(95 downto 0);
    signal dout         : slv(83 downto 0);
-   signal StatusSeq    : slv32Array(5 downto 0);
+   signal StatusSeq    : slv33Array(5 downto 0);
 
    signal dout0Map     : slv(41 downto 0);
    signal dout1Map     : slv(41 downto 0);
@@ -172,7 +172,7 @@ begin
       generic map (
          TPD_G             => TPD_G,
 		 CLK_FREQ_G        => 125.000E+6, 
-         DEBOUNCE_PERIOD_G => 128.0E-9,
+         DEBOUNCE_PERIOD_G => 500.0E-6,
          INPUT_POLARITY_G  => '0',
          OUTPUT_POLARITY_G => '0')
       port map (
