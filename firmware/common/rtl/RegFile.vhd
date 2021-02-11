@@ -470,7 +470,8 @@ begin
 					                         "00" & initDone & "00" & initFail;
 				  when X"11" =>
                      v.axiReadSlave.rdata := selectCR & not(RegFileIn.enable_in) & not(r.initDone) & '0' & x"000" & "00" &
-					                       StatusSeq(5 downto 0)(32) &
+					                       StatusSeq(5)(32) & StatusSeq(4)(32) & StatusSeq(3)(32) &
+										   StatusSeq(2)(32) & StatusSeq(1)(32) & StatusSeq(0)(32) &
 					                       r.fail & not(RegFileIn.temp_Alarm) & powerFailure;
 
 				 when X"12" =>
