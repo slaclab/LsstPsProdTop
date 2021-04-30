@@ -1,7 +1,7 @@
 ##########################################################################################
 # Applications must define the 32-bitFirmware Version Number
 ##########################################################################################
-export PRJ_VERSION = 0x00000005
+export PRJ_VERSION = 0x01000000
 
 ##########################################################################################
 # Application have the option to remove unused source code from Vivado project
