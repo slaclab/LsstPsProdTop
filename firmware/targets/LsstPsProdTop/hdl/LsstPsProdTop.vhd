@@ -187,6 +187,7 @@ begin
    U_Core : entity lsst_pwr_ctrl_core.LsstPwrCtrlCore
       generic map (
          TPD_G        => TPD_G,
+         NUM_PORT_G   => 2, -- Not enough LUT resources to support 4 (default value) UDP ports so reducing it to 2
          BUILD_INFO_G => BUILD_INFO_G)
       port map (
          -- Register Interface
